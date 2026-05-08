@@ -3,683 +3,598 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Maturity Assessment — All 5 Levels</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>AI Maturity Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --ink:#0A1628;--navy:#112240;--ocean:#065A82;--teal:#028090;--mint:#02C39A;
-  --white:#fff;--lgray:#F4F6F8;--border:#DDE3EA;--gray:#546E7A;
+  --ink:#0A1628;--navy:#112240;--panel:#162844;--ocean:#065A82;
+  --teal:#028090;--mint:#02C39A;--white:#fff;--lgray:#F4F6F8;
+  --border:rgba(255,255,255,.08);--gray:#78909C;
   --l1:#5C6BC0;--l2:#0288D1;--l3:#00897B;--l4:#F4A83A;--l5:#2ECC71;
   --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:#EEF2F7;color:var(--ink);min-height:100vh}
+body{font-family:var(--font);background:var(--ink);color:#fff;min-height:100vh}
 
 /* TOPBAR */
-.topbar{background:var(--ink);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:300}
-.tb-brand{display:flex;align-items:center;gap:8px}
-.tb-dot{width:7px;height:7px;border-radius:50%;background:var(--mint)}
-.tb-title{color:#fff;font-size:13px;font-weight:500}
-.tb-right{font-family:var(--mono);font-size:11px;color:#607D8B}
+.topbar{background:rgba(10,22,40,.95);backdrop-filter:blur(12px);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border)}
+.tb-brand{display:flex;align-items:center;gap:10px}
+.tb-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint)}
+.tb-title{font-size:14px;font-weight:600;color:#fff}
+.tb-right{display:flex;align-items:center;gap:12px}
+.refresh-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(2,195,154,.12);border:1px solid rgba(2,195,154,.3);color:var(--mint);font-size:12px;font-family:var(--mono);cursor:pointer;transition:all .2s}
+.refresh-btn:hover{background:rgba(2,195,154,.2)}
+.last-updated{font-family:var(--mono);font-size:11px;color:var(--gray)}
 
-.page{max-width:720px;margin:0 auto;padding:2rem 1rem 4rem}
-.screen{display:none}.screen.active{display:block;animation:up .3s ease}
-@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.page{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem}
 
-/* LEVEL SELECT */
-.hero{background:var(--ink);border-radius:16px;padding:2.5rem 2rem 2rem;margin-bottom:1.25rem;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;width:260px;height:260px;background:radial-gradient(circle,rgba(2,195,154,.12) 0%,transparent 70%);top:-60px;right:-40px;border-radius:50%;pointer-events:none}
-.hero-tag{font-family:var(--mono);font-size:10px;color:var(--mint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
-.hero h1{font-size:28px;font-weight:600;color:#fff;line-height:1.2;margin-bottom:8px}
-.hero h1 em{color:var(--mint);font-style:normal}
-.hero p{font-size:13px;color:#78909C;line-height:1.7;max-width:520px}
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--mint);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:var(--mono);font-size:13px;color:var(--gray)}
 
-.level-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
-@media(max-width:480px){.level-grid{grid-template-columns:1fr}}
-.level-card{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:1.2rem 1.3rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
-.level-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
-.level-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:14px 0 0 14px}
-.lc-l1::before{background:var(--l1)}.lc-l2::before{background:var(--l2)}.lc-l3::before{background:var(--l3)}.lc-l4::before{background:var(--l4)}.lc-l5::before{background:var(--l5)}
-.lc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.lc-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;font-family:var(--mono)}
-.lc-l1 .lc-badge{background:#EDE9FE;color:var(--l1)}.lc-l2 .lc-badge{background:#E1F5FE;color:var(--l2)}.lc-l3 .lc-badge{background:#E0F2F1;color:var(--l3)}.lc-l4 .lc-badge{background:#FFF3E0;color:#E65100}.lc-l5 .lc-badge{background:#E8F5E9;color:#1B5E20}
-.lc-title{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:4px}
-.lc-sub{font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:10px}
-.lc-meta{display:flex;gap:10px}
-.lc-meta span{font-size:11px;color:var(--gray);font-family:var(--mono)}
-.lc-arrow{font-size:18px;color:var(--border);transition:color .2s}
-.level-card:hover .lc-arrow{color:var(--mint)}
+/* ERROR */
+.error-box{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:1.5rem;text-align:center;color:#FCA5A5;font-size:14px;line-height:1.7}
 
-/* FORM */
-.card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.1rem}
-.card-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--gray);text-transform:uppercase;margin-bottom:.9rem}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-@media(max-width:480px){.fgrid{grid-template-columns:1fr}}
-.field{display:flex;flex-direction:column;gap:4px}
-.field label{font-size:11px;font-weight:500;color:var(--gray)}
-.field input,.field select{border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);color:var(--ink);background:var(--lgray);outline:none;transition:border-color .2s}
-.field input:focus,.field select:focus{border-color:var(--mint);background:#fff}
+/* SECTION LABEL */
+.sec-label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--mint);text-transform:uppercase;margin-bottom:1rem}
 
-/* QUIZ HEADER */
-.qhdr{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.5rem;margin-bottom:1.1rem}
-.qhdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.sec-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono)}
-.qnum{font-size:12px;color:var(--gray);font-family:var(--mono)}
-.ptrack{height:4px;background:#E8EDF2;border-radius:4px;overflow:hidden}
-.pfill{height:100%;border-radius:4px;transition:width .4s ease}
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+@media(max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.3rem;position:relative;overflow:hidden;transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:14px 14px 0 0}
+.sc-total::before{background:var(--mint)}
+.sc-pass::before{background:var(--l5)}
+.sc-fail::before{background:#EF4444}
+.sc-avg::before{background:var(--l4)}
+.sc-users::before{background:#A78BFA}
 
-/* QUESTION */
-.qcard{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.1rem}
-.marks-tag{display:inline-block;background:var(--lgray);color:var(--gray);border-radius:6px;padding:2px 9px;font-size:10px;font-family:var(--mono);margin-bottom:12px}
-.sec-tag{display:inline-block;border-radius:6px;padding:2px 9px;font-size:10px;font-family:var(--mono);margin-bottom:12px;margin-left:6px}
-.qtext{font-size:15px;font-weight:500;line-height:1.65;margin-bottom:1.1rem;white-space:pre-wrap;color:var(--ink)}
-.opt{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;margin-bottom:7px;cursor:pointer;transition:all .15s;font-size:13px;line-height:1.5;color:var(--ink);background:#fff}
-.opt:hover{border-color:var(--mint);background:#F0FDF9}
-.opt.selected{background:#E6FAF5;color:#065F46}
-.opt-lt{min-width:24px;height:24px;border-radius:6px;background:var(--lgray);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:var(--mono);flex-shrink:0;transition:all .15s}
-.opt.selected .opt-lt{background:var(--mint);color:#fff}
-textarea.oa{width:100%;min-height:120px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.7;font-family:var(--font);color:var(--ink);background:var(--lgray);resize:vertical;outline:none;transition:border-color .2s}
-textarea.oa:focus{border-color:var(--mint);background:#fff}
-.hint{background:#FFFBEB;border-left:3px solid #F59E0B;border-radius:0 8px 8px 0;padding:9px 13px;margin-top:11px;font-size:12px;color:#92400E;line-height:1.6}
-.nav{display:flex;gap:9px;align-items:center}
-.nav .sp{flex:1}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 22px;border-radius:9px;font-size:13px;font-weight:500;font-family:var(--font);cursor:pointer;border:1px solid transparent;transition:all .18s}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--mint);color:#fff}
-.btn-primary:hover{background:#01A884}
-.btn-secondary{background:#fff;border-color:var(--border);color:var(--ink)}
-.btn-secondary:hover{background:var(--lgray)}
-.btn-full{width:100%}
+/* USER PROGRESS TABLE */
+.user-table{width:100%;border-collapse:collapse;font-size:12px}
+.user-table th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);padding:10px 12px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+.user-table th:first-child{text-align:left}
+.user-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;text-align:center}
+.user-table td:first-child{text-align:left}
+.user-table tr:last-child td{border-bottom:none}
+.user-table tr:hover td{background:rgba(255,255,255,.03)}
+.lvl-score{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.lvl-score-val{font-family:var(--mono);font-size:12px;font-weight:600}
+.lvl-score-tag{font-size:9px;font-weight:700;font-family:var(--mono);padding:1px 5px;border-radius:3px}
+.not-taken{color:rgba(255,255,255,.15);font-family:var(--mono);font-size:12px}
+.highest-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;font-family:var(--mono)}
+.export-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:#A78BFA;font-size:12px;font-family:var(--mono);cursor:pointer;transition:all .2s;white-space:nowrap}
+.export-btn:hover{background:rgba(167,139,250,.25);transform:translateY(-1px)}
+.export-btn svg{flex-shrink:0}
+.stat-label{font-size:11px;color:var(--gray);font-family:var(--mono);margin-bottom:8px}
+.stat-value{font-size:32px;font-weight:600;font-family:var(--mono);line-height:1}
+.stat-sub{font-size:11px;color:var(--gray);margin-top:6px}
+.stat-card .stat-value.mint{color:var(--mint)}
+.stat-card .stat-value.green{color:var(--l5)}
+.stat-card .stat-value.red{color:#EF4444}
+.stat-card .stat-value.amber{color:var(--l4)}
 
-/* RESULTS */
-.res-hero{border-radius:16px;padding:2rem;margin-bottom:1.1rem;text-align:center;position:relative;overflow:hidden}
-.score-num{font-size:64px;font-weight:600;color:#fff;line-height:1;font-family:var(--mono)}
-.score-den{font-size:26px;color:rgba(255,255,255,.5)}
-.score-pct{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px;font-family:var(--mono)}
-.res-name{font-size:13px;color:rgba(255,255,255,.55);margin-top:6px}
-.res-badge{display:inline-block;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:700;margin-top:10px;background:rgba(255,255,255,.15);color:#fff}
-.next-level-card{border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.1rem;border:2px solid}
-.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:1.1rem}
-@media(max-width:480px){.stat4{grid-template-columns:repeat(2,1fr)}}
-.sbox{background:#fff;border:1px solid var(--border);border-radius:12px;padding:.9rem;text-align:center}
-.sn{font-size:20px;font-weight:600;font-family:var(--mono);color:var(--ink)}
-.sl{font-size:10px;color:var(--gray);margin-top:3px}
-.bd-item{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border)}
-.bd-item:last-child{border-bottom:none}
-.bd-lbl{font-size:12px;font-weight:500;min-width:160px}
-.bd-track{flex:1;height:5px;background:#E8EDF2;border-radius:4px;overflow:hidden}
-.bd-bar{height:100%;border-radius:4px}
-.bd-score{font-family:var(--mono);font-size:12px;min-width:44px;text-align:right;font-weight:500}
-.ri{padding:11px 0;border-bottom:1px solid var(--border)}
-.ri:last-child{border-bottom:none}
-.ri-q{font-size:13px;font-weight:500;margin-bottom:5px;line-height:1.5}
-.ri-row{display:flex;align-items:center;gap:7px;font-size:12px}
-.tag-ok{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:#D1FAE5;color:#065F46}
-.tag-no{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;background:#FEE2E2;color:#991B1B}
-.ri-correct{font-size:11px;color:var(--l3);margin-top:3px}
+/* CHARTS ROW */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.3rem}
+.chart-title{font-size:13px;font-weight:500;margin-bottom:1rem;color:rgba(255,255,255,.8)}
+.chart-wrap{position:relative;height:220px}
 
-.screenshot-card{background:linear-gradient(135deg,var(--ink) 0%,#1a3048 100%);border-radius:14px;padding:1.5rem;margin-bottom:1.1rem;color:#fff;text-align:center}
-.sc-title{font-size:16px;font-weight:600;margin-bottom:6px}
-.sc-desc{font-size:13px;color:#90A4B2;line-height:1.7;margin-bottom:14px}
-.sc-steps{text-align:left;background:rgba(255,255,255,.06);border-radius:10px;padding:12px 16px;margin-bottom:14px}
-.sc-step{font-size:12px;color:#B0BEC5;padding:4px 0;line-height:1.5}
-.progress-overview{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:1.1rem}
-.po-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:.7rem .5rem;text-align:center}
-.po-lbl{font-size:9px;color:var(--gray);font-family:var(--mono);margin-bottom:4px}
-.po-val{font-size:13px;font-weight:600;font-family:var(--mono)}
-.po-status{font-size:9px;margin-top:3px;color:var(--gray)}
-@media print{.topbar,.nav,.screenshot-card{display:none!important}body{background:#fff}.page{padding:0}.res-hero{border-radius:0}}
+/* LEVEL BREAKDOWN */
+.level-breakdown{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.3rem;margin-bottom:1.5rem;overflow-x:auto}
+.lvl-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono)}
+.bar-wrap{height:6px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;min-width:80px}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.level-stat{font-family:var(--mono);font-size:12px;text-align:center}
+.lvl-table{width:100%;border-collapse:collapse;min-width:640px}
+.lvl-table th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);padding:8px 14px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap}
+.lvl-table th:first-child{text-align:left}
+.lvl-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;text-align:center}
+.lvl-table td:first-child{text-align:left}
+.lvl-table tr:last-child td{border-bottom:none}
+.lvl-table tr:hover td{background:rgba(255,255,255,.03)}
+
+/* TABLE */
+.table-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.3rem;margin-bottom:1.5rem;overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.search-box{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:#fff;font-size:12px;font-family:var(--mono);outline:none;width:220px;transition:border-color .2s}
+.search-box:focus{border-color:var(--mint)}
+.search-box::placeholder{color:var(--gray)}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.8);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,.03)}
+.tag{display:inline-block;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;font-family:var(--mono)}
+.tag-pass{background:rgba(46,204,113,.15);color:#2ECC71}
+.tag-fail{background:rgba(239,68,68,.15);color:#EF4444}
+.score-pill{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11px;font-family:var(--mono);font-weight:500}
+.empty-state{text-align:center;padding:3rem;color:var(--gray);font-size:13px}
+
+/* RESPONSIVE TABLE */
+.table-wrap{overflow-x:auto}
+@media(max-width:700px){
+
+  .data-table th:nth-child(3),.data-table td:nth-child(3),.data-table th:nth-child(4),.data-table td:nth-child(4){display:none}
+}
+
+/* EMPTY */
+#dashboard{display:none}
+#loading-state{display:flex}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="tb-brand"><div class="tb-dot"></div><span class="tb-title">AI Maturity Assessment Portal  ·  5 Levels</span></div>
-  <span class="tb-right">App Mgmt & Production Support</span>
+  <div class="tb-brand">
+    <div class="tb-dot"></div>
+    <span class="tb-title">AI Maturity Dashboard · App Mgmt & Production Support</span>
+  </div>
+  <div class="tb-right">
+    <span class="last-updated" id="last-updated"></span>
+    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+  </div>
 </div>
 
 <div class="page">
 
-<!-- ══ LEVEL SELECT ══ -->
-<div class="screen active" id="s-select">
-  <div class="hero">
-    <div class="hero-tag">AI Readiness Framework · 2026–2027</div>
-    <h1>AI Maturity<br><em>Assessment</em></h1>
-    <p>Select the level that matches where you are on your AI journey. Complete each level's assessment to progress to the next. Every team member starts at Level 1.</p>
+  <!-- LOADING -->
+  <div id="loading-state" class="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Fetching assessment data…</div>
   </div>
 
-  <div class="card">
-    <div class="card-lbl">Your details (required before selecting a level)</div>
-    <div class="fgrid">
-      <div class="field"><label>Full Name *</label><input type="text" id="uname" placeholder="e.g. Rajesh Kumar"/></div>
-      <div class="field"><label>Role / Designation *</label><input type="text" id="urole" placeholder="e.g. Support Engineer"/></div>
-    </div>
-    <div class="fgrid">
-      <div class="field"><label>Department</label><input type="text" id="udept" placeholder="e.g. Production Support"/></div>
-      <div class="field"><label>Current Level (self-assessed)</label>
-        <select id="ucurlvl">
-          <option value="">Select...</option>
-          <option value="1">Level 1 — Unaware (Starting fresh)</option>
-          <option value="2">Level 2 — Aware (Know basics, not using)</option>
-          <option value="3">Level 3 — Explorer (Experimenting)</option>
-          <option value="4">Level 4 — Practitioner (Daily use)</option>
-          <option value="5">Level 5 — Champion (Lead & mentor)</option>
-        </select>
+  <!-- ERROR -->
+  <div id="error-state" style="display:none;padding:2rem 0">
+    <div class="error-box" id="error-msg"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+
+    <!-- KPI CARDS -->
+    <div class="sec-label">Overview</div>
+    <div class="stats-grid" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat-card sc-total">
+        <div class="stat-label">Total Submissions</div>
+        <div class="stat-value mint" id="kpi-total">0</div>
+        <div class="stat-sub">assessments completed</div>
+      </div>
+      <div class="stat-card sc-users">
+        <div class="stat-label">Distinct Users</div>
+        <div class="stat-value" style="color:#A78BFA" id="kpi-users">0</div>
+        <div class="stat-sub" id="kpi-users-sub">unique participants</div>
+      </div>
+      <div class="stat-card sc-pass">
+        <div class="stat-label">Pass Rate</div>
+        <div class="stat-value green" id="kpi-pass">0%</div>
+        <div class="stat-sub" id="kpi-pass-count">0 passed</div>
+      </div>
+      <div class="stat-card sc-fail">
+        <div class="stat-label">Fail Rate</div>
+        <div class="stat-value red" id="kpi-fail">0%</div>
+        <div class="stat-sub" id="kpi-fail-count">0 need reassessment</div>
+      </div>
+      <div class="stat-card sc-avg">
+        <div class="stat-label">Avg Score</div>
+        <div class="stat-value amber" id="kpi-avg">0%</div>
+        <div class="stat-sub">across all levels</div>
       </div>
     </div>
-  </div>
 
-  <div class="level-grid" id="level-grid">
-    <div class="level-card lc-l1" onclick="selectLevel(1)">
-      <div class="lc-head"><span class="lc-badge">Level 1</span><span class="lc-arrow">→</span></div>
-      <div class="lc-title">🌱  Unaware</div>
-      <div class="lc-sub">Start here. Tests basic AI vocabulary, concepts, and why AI matters in IT operations.</div>
-      <div class="lc-meta"><span>10 MCQs</span><span>·</span><span>20 marks</span><span>·</span><span>Pass: 60%</span><span>·</span><span>~10 min</span></div>
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Pass vs Fail</div>
+        <div class="chart-wrap"><canvas id="chart-passfail"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Submissions by Level</div>
+        <div class="chart-wrap"><canvas id="chart-levels"></canvas></div>
+      </div>
     </div>
-    <div class="level-card lc-l2" onclick="selectLevel(2)">
-      <div class="lc-head"><span class="lc-badge">Level 2</span><span class="lc-arrow">→</span></div>
-      <div class="lc-title">👀  Aware</div>
-      <div class="lc-sub">Tests understanding of AI tools, prompt basics, data safety, and first practical applications.</div>
-      <div class="lc-meta"><span>12 Qs</span><span>·</span><span>30 marks</span><span>·</span><span>Pass: 65%</span><span>·</span><span>~15 min</span></div>
+
+    <!-- LEVEL BREAKDOWN -->
+    <div class="sec-label">Level Breakdown</div>
+    <div class="level-breakdown">
+      <table class="lvl-table">
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Pass Rate</th>
+            <th>Submissions</th>
+            <th>Avg Score</th>
+            <th>Pass Count</th>
+            <th>% Users Attempted</th>
+            <th>% Users Passed</th>
+          </tr>
+        </thead>
+        <tbody id="level-rows"></tbody>
+      </table>
     </div>
-    <div class="level-card lc-l3" onclick="selectLevel(3)">
-      <div class="lc-head"><span class="lc-badge">Level 3</span><span class="lc-arrow">→</span></div>
-      <div class="lc-title">🔬  Explorer</div>
-      <div class="lc-sub">Tests practical AI application to real IT scenarios. Hands-on prompt writing and scenario analysis.</div>
-      <div class="lc-meta"><span>10 Qs</span><span>·</span><span>40 marks</span><span>·</span><span>Pass: 65%</span><span>·</span><span>~20 min</span></div>
+
+    <!-- USER PROGRESS TABLE -->
+    <div class="sec-label">User Progress by Level</div>
+    <div class="table-card" style="margin-bottom:1.5rem">
+      <div class="table-header">
+        <div style="font-size:13px;font-weight:500;color:rgba(255,255,255,.7)">Score at Each Level per User</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--gray)">— = not yet taken</div>
+          <button class="export-btn" onclick="exportUserProgress()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Excel
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Department</th>
+              <th style="color:var(--l1)">L1 Unaware</th>
+              <th style="color:var(--l2)">L2 Aware</th>
+              <th style="color:var(--l3)">L3 Explorer</th>
+              <th style="color:var(--l4)">L4 Practitioner</th>
+              <th style="color:var(--l5)">L5 Champion</th>
+              <th>Highest Level</th>
+            </tr>
+          </thead>
+          <tbody id="user-progress-body"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="level-card lc-l4" onclick="selectLevel(4)">
-      <div class="lc-head"><span class="lc-badge">Level 4</span><span class="lc-arrow">→</span></div>
-      <div class="lc-title">⚡  Practitioner</div>
-      <div class="lc-sub">Tests AI integration into daily workflows, measuring impact, and governance compliance.</div>
-      <div class="lc-meta"><span>8 Qs</span><span>·</span><span>50 marks</span><span>·</span><span>Pass: 70%</span><span>·</span><span>~25 min</span></div>
+
+    <!-- DATA TABLE -->
+    <div class="sec-label">All Submissions</div>
+    <div class="table-card">
+      <div class="table-header">
+        <div style="font-size:13px;font-weight:500;color:rgba(255,255,255,.7)">Individual Results</div>
+        <input class="search-box" type="text" id="search" placeholder="Search name / role…" oninput="filterTable()">
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Department</th>
+              <th>Self Level</th>
+              <th>Assessed Level</th>
+              <th>Score</th>
+              <th>Result</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="level-card lc-l5" onclick="selectLevel(5)">
-      <div class="lc-head"><span class="lc-badge">Level 5</span><span class="lc-arrow">→</span></div>
-      <div class="lc-title">🏆  Champion</div>
-      <div class="lc-sub">Tests mentoring capability, AI strategy thinking, innovation and leadership skills.</div>
-      <div class="lc-meta"><span>8 Qs</span><span>·</span><span>50 marks</span><span>·</span><span>Pass: 75%</span><span>·</span><span>~25 min</span></div>
-    </div>
-  </div>
+
+  </div><!-- /dashboard -->
 </div>
-
-<!-- ══ QUIZ ══ -->
-<div class="screen" id="s-quiz">
-  <div class="qhdr">
-    <div class="qhdr-top">
-      <span class="sec-pill" id="lvl-pill" style="background:#E0F2F1;color:#00695C">Level 1</span>
-      <span class="qnum" id="qnum">1 / 10</span>
-    </div>
-    <div class="ptrack"><div class="pfill" id="pfill" style="width:10%"></div></div>
-  </div>
-  <div class="qcard" id="qcard"></div>
-  <div class="nav">
-    <button class="btn btn-secondary" id="btn-prev" onclick="prev()">← Back</button>
-    <div class="sp"></div>
-    <button class="btn btn-primary" id="btn-next" onclick="next()">Next →</button>
-  </div>
-</div>
-
-<!-- ══ RESULT ══ -->
-<div class="screen" id="s-result">
-  <div class="res-hero" id="res-hero">
-    <div style="font-size:10px;letter-spacing:.1em;margin-bottom:8px;opacity:.6;font-family:var(--mono)" id="res-level-label">LEVEL 1 ASSESSMENT COMPLETE</div>
-    <div><span class="score-num" id="r-score">—</span><span class="score-den">/100</span></div>
-    <div class="score-pct" id="r-pct">—</div>
-    <div class="res-name" id="r-name">—</div>
-    <div class="res-badge" id="r-badge">—</div>
-  </div>
-
-  <div class="next-level-card" id="next-card">
-    <div style="font-size:16px;font-weight:600;margin-bottom:6px" id="next-title">—</div>
-    <div style="font-size:13px;line-height:1.7;color:var(--gray)" id="next-desc">—</div>
-  </div>
-
-  <div class="progress-overview" id="prog-overview"></div>
-
-  <div class="card" id="breakdown-card"></div>
-  <div class="card" id="mcq-review-card"></div>
-  <div class="card" id="open-review-card"></div>
-
-  <div class="screenshot-card">
-    <div style="font-size:28px;margin-bottom:8px">📸</div>
-    <div class="sc-title">Share your result with your team lead</div>
-    <div class="sc-desc">Screenshot this results page and share it in your WhatsApp group or send to your programme lead.</div>
-    <div class="sc-steps">
-      <div class="sc-step"><b>Android:</b> Power + Volume Down simultaneously</div>
-      <div class="sc-step"><b>iPhone:</b> Side Button + Volume Up simultaneously</div>
-      <div class="sc-step"><b>Windows:</b> Win + Shift + S (Snip tool)</div>
-      <div class="sc-step"><b>Mac:</b> Cmd + Shift + 3 (full screen)</div>
-    </div>
-    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="window.print()">🖨️  Print / Save as PDF</button>
-  </div>
-
-  <div class="card" style="display:flex;gap:9px;flex-wrap:wrap">
-    <button class="btn btn-secondary" onclick="goSelect()">← Choose Another Level</button>
-    <button class="btn btn-primary" id="btn-next-level" onclick="nextLevel()">Take Next Level →</button>
-  </div>
-</div>
-
-</div><!-- /page -->
 
 <script>
-// ══ QUESTION BANK ══════════════════════════════════════════════════════════
-// Each level has a pool of MCQ questions; 10 are randomly picked each attempt.
-// Open questions are always included (they don't shuffle out).
+const SHEET_ID = "2PACX-1vSLqI6puxEItQqetSbtgFLUyMin7J_zFy266gnB9A8eN6d5Ns7vgQ8vJ5bVzB8T9ewTpqq0cd2eqo8G";
+const CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
+const PROXY_URL = `https://corsproxy.io/?url=${encodeURIComponent(CSV_URL)}`;
 
-const LEVELS = {
+let allRows = [];
+let chartPF, chartLvl;
 
-1: {
-  color:"#5C6BC0", pillBg:"#EDE9FE", pillFg:"#5C6BC0", heroBg:"linear-gradient(135deg,#1A237E,#5C6BC0)",
-  label:"Level 1 — Unaware", passScore:60, totalMarks:20,
-  mcqCount:10, // how many MCQs to pick per attempt
-  mcqPool:[
-    {t:"mcq",q:"What does AI stand for?",o:["Automated Integration","Artificial Intelligence","Advanced Iteration","Automatic Interface"],a:1,m:2},
-    {t:"mcq",q:"Which of the following is an example of Generative AI?",o:["Microsoft Excel","Google Maps","ChatGPT by OpenAI","Jenkins CI/CD"],a:2,m:2},
-    {t:"mcq",q:"What is Machine Learning?",o:["A way to teach humans to use machines","Systems that learn from data without being explicitly programmed","Manual programming of business rules","A type of computer hardware"],a:1,m:2},
-    {t:"mcq",q:"Which statement best describes an LLM (Large Language Model)?",o:["A database of large files","An AI trained on vast text to understand and generate language","A language-learning app for humans","A large monitor for developers"],a:1,m:2},
-    {t:"mcq",q:"AI hallucination means:",o:["The AI overheats and crashes","AI generates confident but factually wrong information","The AI screen flickers","AI produces slow responses"],a:1,m:2},
-    {t:"mcq",q:"Which of these is a key risk when using public AI tools at work?",o:["The AI might work too fast","Accidentally sharing confidential company data","The AI uses too much internet","AI tools are too expensive to run"],a:1,m:2},
-    {t:"mcq",q:"NLP stands for:",o:["Network Level Protocol","Natural Language Processing","Null Logic Program","Network Learning Platform"],a:1,m:2},
-    {t:"mcq",q:"Which of these tasks is AI already helping IT teams with today?",o:["Making coffee","Automatic log analysis and anomaly detection","Writing company strategy","Hiring new employees"],a:1,m:2},
-    {t:"mcq",q:"What is a 'prompt' in the context of AI?",o:["A reminder notification on your phone","The instruction or question you give to an AI tool","A software bug fix","A type of database query"],a:1,m:2},
-    {t:"mcq",q:"Why is it important to VERIFY AI-generated answers before acting on them?",o:["Because AI tools cost money","Because AI can produce convincing but incorrect information","Because AI is always slow","Because AI needs Wi-Fi to work"],a:1,m:2},
-    {t:"mcq",q:"Which of these best describes a 'neural network'?",o:["A company intranet system","A computing model inspired by the human brain","A type of firewall","A network cable standard"],a:1,m:2},
-    {t:"mcq",q:"What is the difference between AI and automation?",o:["They are exactly the same","Automation follows fixed rules; AI can learn and adapt","AI is older than automation","Automation is smarter than AI"],a:1,m:2},
-    {t:"mcq",q:"Which company created the Claude AI assistant?",o:["OpenAI","Google","Anthropic","Microsoft"],a:2,m:2},
-    {t:"mcq",q:"What does 'training data' mean in AI?",o:["Practice exercises for developers","The dataset used to teach an AI model","The output produced by AI","The server configuration for AI"],a:1,m:2},
-    {t:"mcq",q:"Which of these is NOT a generative AI capability?",o:["Writing emails","Creating images","Running scheduled database backups","Summarising documents"],a:2,m:2},
-    {t:"mcq",q:"What is a 'token' in the context of LLMs?",o:["A login security key","A small unit of text (word or part of a word) the AI processes","A payment method","A software licence"],a:1,m:2},
-    {t:"mcq",q:"AI tools that predict future outcomes based on historical data are called:",o:["Generative AI","Predictive AI","Reactive AI","Symbolic AI"],a:1,m:2},
-    {t:"mcq",q:"What is the MOST responsible way to use an AI-generated response at work?",o:["Copy and paste it directly without reading","Read it, verify key facts, then edit before using","Forward it directly to the client","Delete it — AI is not trustworthy"],a:1,m:2},
-    {t:"mcq",q:"Which of the following is a Large Language Model?",o:["Excel","Jira","GPT-4","ServiceNow"],a:2,m:2},
-    {t:"mcq",q:"'Bias' in AI means:",o:["The AI is deliberately cheating","The AI produces skewed outputs due to patterns in its training data","The AI runs slower on biased hardware","The AI prefers certain users"],a:1,m:2},
-    {t:"mcq",q:"What is 'deep learning'?",o:["Learning by reading deeply","A subset of machine learning using multi-layered neural networks","A slow type of AI","A study technique for developers"],a:1,m:2},
-    {t:"mcq",q:"Which of these is NOT an AI assistant?",o:["Claude","Gemini","Jenkins","ChatGPT"],a:2,m:2},
-    {t:"mcq",q:"What does 'supervised learning' mean?",o:["A teacher watches developers code","AI is trained using labelled input-output pairs","AI supervises human workers","AI that needs constant internet"],a:1,m:2},
-    {t:"mcq",q:"AI models like GPT-4 are trained primarily on:",o:["Live internet data only","Large volumes of text from books, websites, and other sources","Company databases","User phone calls"],a:1,m:2},
-    {t:"mcq",q:"What is the main purpose of a chatbot?",o:["To replace all human workers","To simulate conversation and answer questions automatically","To manage server infrastructure","To write software code"],a:1,m:2},
-    {t:"mcq",q:"Which of these best describes 'computer vision' in AI?",o:["AI that monitors your screen for bugs","AI that can understand and interpret images and video","A type of cybersecurity tool","A programming language"],a:1,m:2},
-    {t:"mcq",q:"'Generative AI' refers to AI that can:",o:["Only analyse existing content","Create new content such as text, images, and code","Only work with numbers","Run automated scripts"],a:1,m:2},
-    {t:"mcq",q:"What is an AI model's 'knowledge cutoff'?",o:["The maximum number of questions it can answer","The date after which it has no knowledge of events","The maximum file size it can process","The time limit per response"],a:1,m:2},
-    {t:"mcq",q:"Which statement about AI is TRUE?",o:["AI always makes the right decision","AI is a tool that augments human decision-making","AI can replace all jobs immediately","AI has its own emotions and opinions"],a:1,m:2},
-    {t:"mcq",q:"What does 'fine-tuning' an AI model mean?",o:["Adjusting the AI hardware settings","Further training a pre-trained model on specific data for a specific task","Fixing bugs in the AI code","Making the AI respond faster"],a:1,m:2},
-    {t:"mcq",q:"Which best describes 'unsupervised learning'?",o:["AI that works without electricity","AI that finds patterns in data without labelled examples","AI that needs no internet","AI that works independently of humans"],a:1,m:2},
-    {t:"mcq",q:"What is a key benefit of AI in IT operations?",o:["AI replaces the need for all IT staff","AI can detect anomalies faster than manual monitoring","AI eliminates all system outages","AI removes the need for backups"],a:1,m:2},
-    {t:"mcq",q:"'Multimodal AI' refers to AI that can:",o:["Work in multiple languages only","Process and generate different types of data — text, images, audio, etc.","Run on multiple devices simultaneously","Answer multiple questions at once"],a:1,m:2},
-    {t:"mcq",q:"What is the best description of 'AI ethics'?",o:["Rules about which AI tools are most expensive","Principles ensuring AI is used fairly, safely, and responsibly","The history of AI development","Technical standards for AI hardware"],a:1,m:2},
-    {t:"mcq",q:"Which of these is an example of AI being used in cybersecurity?",o:["Sending phishing emails","Detecting unusual login patterns that could indicate a breach","Writing company security policies","Installing firewalls"],a:1,m:2},
-    {t:"mcq",q:"What does 'model accuracy' mean in AI?",o:["How fast the model responds","How often the model produces correct predictions on test data","How large the model is","How much the model costs"],a:1,m:2},
-    {t:"mcq",q:"When AI is described as a 'black box', this means:",o:["The AI only works in dark mode","It is difficult to understand how the AI reached its decision","The AI is offline","The AI uses encrypted data"],a:1,m:2},
-    {t:"mcq",q:"Which of these is an example of AI in everyday IT support?",o:["Manually sorting emails by subject","AI-powered ticket classification and routing","Printing server logs","Scheduling team meetings"],a:1,m:2},
-    {t:"mcq",q:"What does 'natural language generation' (NLG) mean?",o:["Teaching humans to write naturally","AI producing human-readable text from data or instructions","A grammar-checking tool","A voice recognition system"],a:1,m:2},
-  ],
-  openPool:[], // Level 1 has no open questions
-},
+const LEVEL_COLORS = {"Level 1":"#5C6BC0","Level 2":"#0288D1","Level 3":"#00897B","Level 4":"#F4A83A","Level 5":"#2ECC71"};
+const LEVEL_LABELS = {"Level 1":"🌱 Unaware","Level 2":"👀 Aware","Level 3":"🔬 Explorer","Level 4":"⚡ Practitioner","Level 5":"🏆 Champion"};
 
-2: {
-  color:"#0288D1", pillBg:"#E1F5FE", pillFg:"#0277BD", heroBg:"linear-gradient(135deg,#01579B,#0288D1)",
-  label:"Level 2 — Aware", passScore:65, totalMarks:30,
-  mcqCount:7,
-  mcqPool:[
-    {t:"mcq",q:"Which AI tool is best known for helping developers complete and explain code?",o:["Claude.ai","Google Translate","GitHub Copilot","Splunk"],a:2,m:2},
-    {t:"mcq",q:"What is 'prompt engineering'?",o:["Writing software code for AI systems","Crafting effective instructions to get better results from AI","Managing server infrastructure for AI","Designing AI hardware chips"],a:1,m:2},
-    {t:"mcq",q:"What does RAG stand for in AI?",o:["Random Access Generator","Retrieval-Augmented Generation","Recursive AI Grammar","Rapid Application Generator"],a:1,m:2},
-    {t:"mcq",q:"Which data should NEVER be pasted into a public AI tool like ChatGPT?",o:["A public blog post","Customer passwords and PII data","A general process description","A software architecture diagram"],a:1,m:2},
-    {t:"mcq",q:"What does 'role framing' in a prompt mean?",o:["Selecting the font and layout for AI output","Telling AI to act as a specific expert (e.g. 'You are a senior DBA')","Setting up user roles in an IT system","Choosing which AI model to use"],a:1,m:2},
-    {t:"mcq",q:"Which statement about AI-generated code is TRUE?",o:["It never contains bugs","It is always more efficient than human-written code","It must always be reviewed by a human before deployment","It can only be generated by senior developers"],a:2,m:2},
-    {t:"mcq",q:"What is the FIRST step to writing a strong AI prompt?",o:["Keep it as short as possible","Give clear context about the task, goal, and audience","Use technical jargon to impress the AI","Ask the AI to guess what you need"],a:1,m:2},
-    {t:"mcq",q:"What does 'context window' mean in an LLM?",o:["The visible area of the chat screen","The maximum amount of text the AI can process in one interaction","The AI's long-term memory storage","The browser tab the AI is running in"],a:1,m:2},
-    {t:"mcq",q:"Which of these is a safe use of AI in a support role?",o:["Pasting a live production database dump to get AI to debug it","Using AI to summarise a sanitised incident report","Asking AI to access your company's internal systems directly","Sharing a client contract for AI to review"],a:1,m:2},
-    {t:"mcq",q:"'Zero-shot prompting' means:",o:["Asking AI with no examples of the desired output","Asking AI without an internet connection","Sending an empty prompt","Testing AI with zero users"],a:0,m:2},
-    {t:"mcq",q:"What is 'few-shot prompting'?",o:["Giving the AI only a few seconds to respond","Providing 2–3 examples inside the prompt to guide AI output","Limiting the AI to short answers","Testing with a small group of users"],a:1,m:2},
-    {t:"mcq",q:"Which of these is the BEST way to improve an AI response that is too vague?",o:["Ask again with exactly the same prompt","Add more specific context, constraints, and output format to your prompt","Use a different AI tool","Accept the vague answer"],a:1,m:2},
-    {t:"mcq",q:"Why should you not fully trust an AI tool's confidence level?",o:["AI tools are designed to be humble","AI can state incorrect information confidently (hallucination)","Confident AI is always correct","AI confidence is regulated by law"],a:1,m:2},
-    {t:"mcq",q:"What is the purpose of a 'system prompt' in AI?",o:["To restart the AI server","To set the AI's behaviour and constraints before the conversation begins","To save your conversation history","To check the AI's internet connection"],a:1,m:2},
-    {t:"mcq",q:"Which of these BEST describes 'temperature' in an AI prompt setting?",o:["The server room cooling level","A setting that controls how creative or deterministic AI responses are","The response speed of the AI","The length of the AI response"],a:1,m:2},
-    {t:"mcq",q:"What is 'prompt injection'?",o:["Adding images to a prompt","A security attack where malicious instructions are hidden in input to manipulate AI","A way to speed up prompts","A technique to shorten prompts"],a:1,m:2},
-    {t:"mcq",q:"Which of these is the BEST example of a role-framed prompt?",o:["Tell me about servers","You are a senior network engineer. Explain the likely causes of intermittent packet loss on a production switch.","What is packet loss?","Fix my network"],a:1,m:2},
-    {t:"mcq",q:"What does 'AI augmentation' mean in the workplace?",o:["Replacing employees with AI","Using AI to enhance and speed up human work, not replace it","Upgrading AI hardware","Training AI on employee data"],a:1,m:2},
-    {t:"mcq",q:"Which AI tool is best suited for summarising a long technical document?",o:["A spreadsheet formula","An LLM like Claude or ChatGPT","A SQL database query","A code compiler"],a:1,m:2},
-    {t:"mcq",q:"What is 'chain-of-thought' prompting?",o:["Linking multiple AI tools together","Asking AI to show its reasoning step by step before giving an answer","Sending a series of short prompts","Using AI to write a chain of emails"],a:1,m:2},
-    {t:"mcq",q:"What should you ALWAYS do before using AI output in a client-facing document?",o:["Add the AI's name as a co-author","Review, fact-check, and edit the content for accuracy and tone","Send it directly — AI output is always correct","Ask a junior team member to approve it"],a:1,m:2},
-    {t:"mcq",q:"Which of these describes 'AI-assisted incident management'?",o:["AI automatically closes all tickets","Using AI to help analyse logs, suggest root causes, and draft updates during incidents","AI managing the on-call rota","AI sending alerts to management"],a:1,m:2},
-    {t:"mcq",q:"What is the main advantage of using AI for repetitive documentation tasks?",o:["AI makes documents look more professional","AI significantly reduces time spent on routine writing, freeing humans for complex work","AI documents never have errors","AI automatically stores documents in the right folder"],a:1,m:2},
-    {t:"mcq",q:"What is 'grounding' in the context of AI responses?",o:["Connecting the AI to the internet","Anchoring AI responses to specific, verifiable facts or documents","Restarting the AI model","Training the AI on new data"],a:1,m:2},
-    {t:"mcq",q:"Which of these is a good practice when building a team prompt library?",o:["Keep prompts secret so others can't use them","Document each prompt with its use case, example output, and tips for adapting it","Only include prompts written by the team lead","Delete prompts that don't work perfectly first time"],a:1,m:2},
-    {t:"mcq",q:"What is 'AI output formatting'?",o:["Changing the AI tool's font size","Specifying in your prompt how you want the answer structured (bullet points, table, paragraph, etc.)","The visual design of the AI chat interface","Formatting the AI's server configuration"],a:1,m:2},
-    {t:"mcq",q:"When should you use AI to help write a post-incident report?",o:["Never — reports must be 100% human-written","After the incident, use AI to draft a structured report from your notes, then review and edit it","Ask AI to write the report before the incident is resolved","Only if the incident lasted more than 1 hour"],a:1,m:2},
-    {t:"mcq",q:"What does 'iterative prompting' mean?",o:["Sending the same prompt repeatedly","Refining and improving your prompt based on the AI's previous response to get better results","Using AI in multiple iterations of software development","Sending prompts to multiple AI tools at once"],a:1,m:2},
-    {t:"mcq",q:"What is the risk of 'over-reliance' on AI?",o:["Using AI too often increases server costs","Skills may atrophy and critical errors may go unnoticed if humans stop verifying AI output","AI gets slower if used too much","AI tools charge more for heavy users"],a:1,m:2},
-  ],
-  openPool:[
-    {t:"open",q:"Write an AI prompt you would use to draft a change communication email for patching 5 production servers this Saturday night at 11 PM. The audience is a non-technical business manager.",m:6,h:"Strong answers include: role context ('You are a technical writer'), specifics (server count, time, date), audience defined (non-technical), desired format and length mentioned."},
-    {t:"open",q:"A team member says 'AI is just hype — it won't affect my job.' How would you respond to reassure and educate them? Write your response in 3–4 sentences.",m:6,h:"Good answers: acknowledge the concern, cite a concrete example from IT/support, explain AI augments not replaces, mention the team's AI programme as a safe space to learn."},
-    {t:"open",q:"List THREE data types that should never be shared with a public AI tool and briefly explain why for each.",m:8,h:"Award marks for any 3 of: customer PII, API keys/passwords, production database credentials, proprietary source code, financial records. Explanation should mention data leakage or policy violation."},
-    {t:"open",q:"Describe how you would use AI to help prepare for a weekly IT operations standup meeting. What would you ask AI to do and what prompt would you use?",m:6,h:"Strong: clear use case (summarising tickets, drafting updates), prompt includes context (team size, meeting format), output format specified. Partial: vague use case without actual prompt."},
-    {t:"open",q:"A colleague pastes a client's full name, email and account number into ChatGPT to get help drafting a support email. Explain what is wrong with this and what they should do instead.",m:8,h:"Full marks: identifies PII data risk, mentions company data policy, explains anonymisation/redaction approach, suggests using internal/approved AI tools. Partial: identifies risk but no corrective action."},
-    {t:"open",q:"You want to use AI to help you write a root cause analysis (RCA) for a P2 incident. Describe step by step how you would do this: what information you would gather, how you would sanitise it, what prompt you would use, and how you would review the AI output.",m:8,h:"Full marks: gathers timeline, logs, error messages; sanitises by removing credentials/PII; prompt includes role, context, structured output request; reviews AI output for factual accuracy before submitting. Partial: missing sanitisation step or review step."},
-    {t:"open",q:"Your manager asks you to explain what Claude.ai can and cannot do. Write a short paragraph (4–6 sentences) that accurately describes its capabilities and limitations for a non-technical audience.",m:6,h:"Good answers: explains it can write, summarise, explain, and assist; notes it cannot access live systems, has a knowledge cutoff, can hallucinate; recommends human verification. Penalise if claiming AI can access live databases or make autonomous decisions."},
-    {t:"open",q:"Write a prompt template your team could reuse each week to summarise the top 5 open incidents from a pasted ticket list. Include placeholders and specify the output format you want.",m:6,h:"Full marks: role framing, clear instruction, uses placeholders like [TICKET_LIST], specifies output format (table or numbered list with columns: ticket ID, summary, priority, owner, status). Partial: no placeholders or no output format specified."},
-    {t:"open",q:"Explain to a junior team member (in plain language, 3–5 sentences) why they should never paste production server credentials into any AI tool, even if it would help solve a problem faster.",m:6,h:"Full marks: explains credential exposure risk, notes AI tools may log inputs, mentions data protection policy, suggests safer alternative (sanitise/redact first). Penalise for vague answers without a specific risk mentioned."},
-  ],
-  openCount:2, // how many open Qs to include per attempt (picked randomly)
-},
-
-3: {
-  color:"#00897B", pillBg:"#E0F2F1", pillFg:"#00695C", heroBg:"linear-gradient(135deg,#004D40,#00897B)",
-  label:"Level 3 — Explorer", passScore:65, totalMarks:40,
-  mcqCount:4,
-  mcqPool:[
-    {t:"mcq",q:"You receive a P2 incident at 3 AM: 'Application login page blank after last night's release'. What is the BEST first AI-assisted action?",o:["Ask AI to fix the code immediately","Paste sanitised error logs into Claude and ask for root cause analysis and top 3 remediation steps","Ask AI to write an apology email to users","Ask AI to roll back the release automatically"],a:1,m:3},
-    {t:"mcq",q:"Which prompt technique produces the best AI output for a complex IT task?",o:["A single vague sentence: 'Fix my issue'","A highly detailed prompt with role, context, goal, format, and constraints","Just pasting the error log with no explanation","Asking AI to 'do its best'"],a:1,m:3},
-    {t:"mcq",q:"A junior developer receives AI-generated code that seems to work. What should they do NEXT?",o:["Deploy it immediately — AI code is reliable","Review it for bugs, security issues, and logic correctness before deploying","Ask the AI if the code is safe to deploy","Share it with the client directly"],a:1,m:3},
-    {t:"mcq",q:"What is the biggest advantage of using AI to generate runbook first drafts?",o:["AI knows the exact server passwords","AI saves 60–80% of the drafting time while humans add context and accuracy","AI can automatically execute the runbook steps","AI runbooks never need review"],a:1,m:3},
-    {t:"mcq",q:"When using AI for root cause analysis, what information gives the BEST results?",o:["Just the error message","Sanitised logs, timeline, recent changes, and system context","The name of the on-call engineer","The ticket number only"],a:1,m:3},
-    {t:"mcq",q:"What does 'chain-of-thought prompting' help AI do?",o:["Respond faster","Work through complex problems step-by-step with reasoning","Generate longer responses","Connect to the internet"],a:1,m:3},
-    {t:"mcq",q:"Which is the BEST use of AI during a live P1 incident?",o:["Let AI handle the incident autonomously","Use AI to quickly draft stakeholder updates while engineers focus on resolution","Ask AI to page the on-call team","Use AI to close the ticket automatically"],a:1,m:3},
-    {t:"mcq",q:"What is 'output validation' when using AI-generated content?",o:["Checking AI output for spelling only","Verifying that AI output is accurate, safe, and appropriate before using it","Sending AI output to the client for approval","Storing AI output in a database"],a:1,m:3},
-    {t:"mcq",q:"Which prompt approach is BEST for getting AI to generate a structured incident timeline?",o:["Ask AI to 'tell me what happened'","Provide the raw log entries and ask AI to extract events in chronological order with timestamps","Ask AI to guess the timeline","Tell AI to keep it short"],a:1,m:3},
-    {t:"mcq",q:"When using AI to draft a runbook, what must a human reviewer verify?",o:["That the runbook is the right length","That all steps are technically accurate, reflect current system state, and include correct escalation paths","That the AI used correct grammar","That the runbook is approved by the AI"],a:1,m:3},
-    {t:"mcq",q:"What is the MAIN risk of using AI to generate SQL queries for production databases?",o:["AI-generated SQL is always slow","AI may generate queries that return incorrect results or cause unintended data changes if not reviewed","AI cannot write SQL","SQL queries cost more if AI-generated"],a:1,m:3},
-    {t:"mcq",q:"Which of these is the BEST description of 'AI-assisted triage'?",o:["AI automatically resolves all tickets","Using AI to quickly categorise, prioritise, and suggest initial steps for incoming incidents","AI assigns tickets to engineers","AI monitors the ticketing system"],a:1,m:3},
-    {t:"mcq",q:"How should AI-generated code be treated before deployment to production?",o:["Deploy immediately — AI is more reliable than humans","Treat it like any other code: peer review, testing, and security scan required","Only deploy if a senior developer wrote the prompt","Ask the AI to review its own code"],a:1,m:3},
-    {t:"mcq",q:"What does 'prompt chaining' mean?",o:["Sending the same prompt to multiple AI tools","Breaking a complex task into a sequence of prompts where each builds on the previous output","Connecting AI tools via API","Writing very long prompts"],a:1,m:3},
-    {t:"mcq",q:"Which is the BEST use of AI for knowledge management in an IT team?",o:["Storing all AI conversations as documentation","Using AI to convert tribal knowledge and notes into searchable, structured FAQs and runbooks","Asking AI to manage the team's SharePoint","Letting AI decide what documentation is needed"],a:1,m:3},
-    {t:"mcq",q:"What is 'AI-assisted change management'?",o:["AI automatically approves all change requests","Using AI to draft change request documentation, assess risks, and suggest rollback plans for human review","AI managing the change advisory board","AI scheduling all changes automatically"],a:1,m:3},
-    {t:"mcq",q:"Which practice BEST reduces AI hallucination risk in technical outputs?",o:["Use shorter prompts","Provide specific factual context in the prompt and always verify outputs against real system data","Use a more expensive AI model","Ask AI to double-check itself"],a:1,m:3},
-    {t:"mcq",q:"What is the benefit of including 'output format' instructions in a prompt?",o:["It makes the AI faster","It ensures the response is structured in a way that is immediately usable (e.g. table, bullet list, JSON)","It reduces the AI's token usage","It makes the AI more accurate"],a:1,m:3},
-    {t:"mcq",q:"When asking AI to analyse a system error, which context is MOST useful to include?",o:["The name of the person who spotted the error","The error message, system name, recent changes, affected users, and timeline","The ticket number only","The AI tool version"],a:1,m:3},
-  ],
-  openPool:[
-    {t:"open",q:"SCENARIO: Your team's MTTR (Mean Time to Resolution) for P2 incidents averages 4 hours. A colleague suggests using AI to help. Describe a specific AI-assisted workflow that could reduce this time. Include: which AI tool, at what step in the process, what prompt approach, and how you would measure the improvement.",m:10,h:"Strong: names tool (Claude, Copilot), step (log analysis, root cause), prompt includes role+context+format, measurement = track MTTR before vs after pilot. Partial: vague tool mention or no measurement approach."},
-    {t:"open",q:"Write the exact prompt you would use to get Claude.ai to explain a complex 200-line Python script to a junior support engineer who has never coded. The explanation should include: what the script does, 3 potential failure points, and how to run it safely.",m:12,h:"Full marks: role framing ('You are a senior Python developer'), defines audience (junior, non-coder), specifies output (3 failure points + safe run instructions), appropriate length guidance. 8 marks: correct structure but missing one required output element."},
-    {t:"open",q:"You discovered that AI can reduce your weekly status report writing from 45 minutes to 5 minutes. How would you DOCUMENT and SHARE this AI win with your team in a way that encourages others to try it?",m:9,h:"Award marks for: documenting the prompt used, before/after time comparison, sharing in team channel/standup, offering to demo for others, adding to team prompt library. Strong answers mention reproducibility."},
-    {t:"open",q:"SCENARIO: A P3 ticket says 'Users report slow performance on the order processing module since Monday'. Write the AI prompt you would use to investigate this, including what data you would include and what output format you need.",m:10,h:"Full marks: prompt includes role (senior support engineer), context (slow performance, module name, timeline), data to include (metrics, logs, recent deployments), desired output (top 3 causes, next investigation steps). Partial: missing output format or data context."},
-    {t:"open",q:"Your team is building a prompt library. Write 2 reusable prompt templates for your team — one for incident triage and one for drafting post-incident reports. Include placeholders like [SYSTEM_NAME] and [DATE].",m:11,h:"Full marks: 2 distinct templates, both include role framing, both use clear placeholders, triage template asks for root cause + steps, PIR template asks for timeline + impact + learning. Partial: only 1 template or no placeholders."},
-    {t:"open",q:"You are asked to create an AI-assisted SLA breach prediction process. Describe how you would use AI to identify tickets at risk of breaching SLA before it happens. Include the data you would feed AI, the prompt approach, and how you would act on the output.",m:10,h:"Full marks: identifies data sources (ticket age, priority, SLA timer, assignee workload), sanitises before passing to AI, prompt asks for risk-ranked list with reasoning, output drives proactive action (reassign, escalate). Partial: idea present but no prompt approach or action plan."},
-    {t:"open",q:"Your team uses AI to draft change request documentation. A change goes wrong and causes a 2-hour outage. Post-incident, how do you review your AI-assisted process to prevent recurrence? What steps would you change?",m:9,h:"Full marks: reviews the AI prompt used, identifies what context was missing, adds human review checkpoint, updates the SOP, documents the lesson in the prompt library. Partial: identifies problem but no specific process improvement."},
-    {t:"open",q:"Write a detailed AI prompt to generate a 'Weekly Production Health Summary' email for a production support manager. The email should cover: top 5 incidents, system availability, pending changes, and key risks for next week. Include all placeholders.",m:11,h:"Full marks: role framing (senior support analyst), all 4 sections specified, output format clear (email with headers), placeholders for dynamic data (e.g. [INCIDENT_LIST], [AVAILABILITY_%]), audience defined (manager, non-technical). 8 marks: 3 of 4 sections covered."},
-    {t:"open",q:"Describe a real or realistic scenario where using AI incorrectly during an incident made things worse. What went wrong, why did it go wrong, and what should have been done differently?",m:9,h:"Full marks: credible scenario (e.g. AI gave wrong rollback steps, AI summary missed key log line), root cause analysis (wrong prompt, no human review, used AI output without verification), corrective action is specific and practical. Partial: scenario present but no learning or corrective action."},
-  ],
-  openCount:2,
-},
-
-4: {
-  color:"#F4A83A", pillBg:"#FFF3E0", pillFg:"#E65100", heroBg:"linear-gradient(135deg,#BF360C,#F4A83A)",
-  label:"Level 4 — Practitioner", passScore:70, totalMarks:50,
-  mcqCount:2,
-  mcqPool:[
-    {t:"mcq",q:"You have been using AI daily for 2 months. How should you demonstrate its value to your Head of Department?",o:["Show them how impressive the AI tool looks","Present before/after data: time saved, error rates, ticket resolution speed, with concrete numbers","Tell them AI is 'amazing' and they should trust you","Ask the AI to write a report about itself"],a:1,m:4},
-    {t:"mcq",q:"When embedding AI into a Standard Operating Procedure (SOP), what is the MOST important step?",o:["Make the AI steps optional so people can skip them","Document the AI tool, prompt, human review step, and fallback if AI fails","Ask everyone to use AI their own way","Keep the AI usage secret from auditors"],a:1,m:4},
-    {t:"mcq",q:"What is the PRIMARY risk of 'shadow AI' (teams using unapproved AI tools)?",o:["The tools are usually slower","Data leakage, compliance violations, and lack of governance","The tools cost more money","The tools produce worse output"],a:1,m:4},
-    {t:"mcq",q:"When measuring AI ROI, which metric is MOST valuable to business leadership?",o:["Number of AI prompts sent","Cost savings and time saved expressed in financial terms","How often the team uses AI","The AI tool's benchmark score"],a:1,m:4},
-    {t:"mcq",q:"What does 'human-in-the-loop' mean in an AI workflow?",o:["A human types the prompts","A human reviews and approves AI output before it is acted upon","AI assists humans with physical tasks","Humans monitor the AI server"],a:1,m:4},
-    {t:"mcq",q:"Which approach BEST embeds AI into a team's daily workflow sustainably?",o:["Mandate AI use for all tasks immediately","Start with one high-value, low-risk use case, measure results, then expand","Let each person decide if they want to use AI","Replace all existing processes with AI immediately"],a:1,m:4},
-    {t:"mcq",q:"What is 'AI fatigue' and how should a Practitioner address it?",o:["When the AI tool crashes from overuse","When team members lose interest or trust in AI after early setbacks — address by celebrating wins and simplifying workflows","When the AI responds too slowly","When the AI runs out of tokens"],a:1,m:4},
-    {t:"mcq",q:"Which of these BEST describes a mature AI-integrated SOP?",o:["An SOP that replaces all human steps with AI","An SOP that specifies the AI tool, exact prompt, human review step, escalation path, and rollback if AI fails","An SOP that mentions AI in the introduction only","An SOP approved by an AI tool"],a:1,m:4},
-    {t:"mcq",q:"What is the MOST important factor when selecting an AI tool for a team workflow?",o:["The tool with the highest public benchmark score","The tool that meets your data security requirements, integrates with your processes, and your team can actually use","The most popular tool","The newest tool available"],a:1,m:4},
-    {t:"mcq",q:"When presenting AI ROI to leadership, which approach is MOST persuasive?",o:["Show a demo of the AI tool","Before/after data with financial impact: hours saved × hourly rate, error rate reduction, customer satisfaction change","Explain how the AI technology works","Describe your team's enthusiasm for AI"],a:1,m:4},
-    {t:"mcq",q:"What does 'AI workflow integration' require beyond just using an AI tool?",o:["Buying the most expensive AI licence","Updated SOPs, team training, governance rules, measurement framework, and designated ownership","Simply telling the team to use AI","A new IT system to host the AI"],a:1,m:4},
-    {t:"mcq",q:"How should a Practitioner handle a situation where AI gives inconsistent results for the same task?",o:["Stop using AI for that task entirely","Standardise the prompt, add more context and constraints, and document the approved version in the prompt library","Accept inconsistency as normal","Ask AI to explain why it is inconsistent"],a:1,m:4},
-    {t:"mcq",q:"What is the BEST way to onboard a new team member to your AI-integrated workflow?",o:["Tell them to figure it out themselves","Pair them with an experienced AI user, share the prompt library, walk through key use cases, and set a 2-week practice goal","Send them a link to the AI tool","Ask AI to onboard them"],a:1,m:4},
-    {t:"mcq",q:"What is a 'feedback loop' in an AI workflow?",o:["When AI repeats itself","A process where AI output is reviewed, errors are corrected, and improvements feed back into the prompt or process","When team members complain about AI","An automated system that re-runs failed prompts"],a:1,m:4},
-  ],
-  openPool:[
-    {t:"open",q:"CASE STUDY: You have been using AI for incident triage for 6 weeks. Your MTTR dropped from 4.2 hours to 2.8 hours (33% improvement). Ticket quality scores rose from 72% to 89%. Draft a 1-page business case to present to senior leadership, requesting approval to extend AI-assisted triage to the full team of 15 people.",m:15,h:"Strong: executive summary with numbers, current state, AI tool + process used, results with %, rollout plan, risks and mitigations, cost (free tier or license), ask for approval. 10+ marks: includes all elements. 8 marks: missing risk or rollout plan."},
-    {t:"open",q:"Create an AI-Integrated Workflow for your team's weekly production health check. Include: which AI tool at each step, the exact prompt template, who does the human review, and how long it takes vs the manual process.",m:15,h:"Full marks: names tool per step, includes prompt template with placeholders, clear human review step, time comparison (before/after). Must show AI is augmenting not replacing — human oversight required at key decision points."},
-    {t:"open",q:"A colleague refuses to use AI, saying 'I don't trust it and I think it's cheating.' As a Level 4 Practitioner, how do you help them? Describe your approach: what you say, what you show them, and how you measure whether your coaching worked.",m:12,h:"Award marks for: empathy first (acknowledge their concern), show a low-risk demo relevant to their work, explain human-in-the-loop principle, set a small 1-week challenge, follow up and measure (did they try it? what result?). Avoid being preachy."},
-    {t:"open",q:"Design an AI governance checklist for your team covering: approved tools, data handling rules, human review requirements, and what to do if AI gives a wrong answer in a live incident. Present it as a practical 1-page reference.",m:14,h:"Full marks: lists approved tools (name at least 2), clear data rules (no PII, no credentials), human review at key steps, escalation path if AI is wrong, practical format. Deduct if checklist is too vague to be actionable."},
-    {t:"open",q:"You want to run a 2-week AI pilot with 3 team members to test AI-assisted change request documentation. Describe your pilot plan: objectives, process, how you will track results, and how you will decide if it was a success.",m:13,h:"Strong: clear objective (time saved per CR, quality score), names participants, defines process change, tracks before/after metrics, defines success threshold (e.g. >20% time saving, no quality drop). Partial: pilot plan without measurement."},
-    {t:"open",q:"Your team's AI governance policy needs a quarterly review. Design the review agenda and checklist. What do you evaluate, who is involved, and what decisions can come out of the review?",m:12,h:"Full marks: reviews tool list (add/remove), data handling rules, prompt library quality, incident log (any AI errors), training needs, ROI data. Involves team lead + senior users. Decisions: update approved tools, update prompts, schedule training, escalate risks. Partial: vague agenda without specific items."},
-    {t:"open",q:"You are presenting AI maturity progress to your Head of Department. Design a 1-page monthly AI dashboard showing: team adoption rate, top AI use cases, time saved, quality metrics, and any risks. Describe each section and what data goes in it.",m:14,h:"Full marks: 5 sections clearly described, each with specific metric (e.g. adoption = % of team using AI weekly, time saved = hours/month by use case), risks section includes current issues and mitigations. Partial: fewer than 4 sections or no specific metrics."},
-    {t:"open",q:"A new AI tool is being considered to replace your current one for incident triage. Describe your evaluation process: what criteria you use, how you test it, who is involved, and how you make the final decision.",m:13,h:"Full marks: criteria include security/data policy, accuracy, ease of use, integration, cost; testing involves real (sanitised) use cases; involves team users and security; decision based on evidence not preference. Partial: criteria present but no testing plan or decision framework."},
-    {t:"open",q:"After 3 months of AI integration, two senior team members are getting great results but three junior members are barely using AI. How do you close this adoption gap? Describe your diagnosis approach, intervention plan, and how you measure improvement.",m:12,h:"Full marks: diagnoses root cause (confidence, skill, relevant use cases), intervention is personalised (1-1 coaching, relevant demos, low-risk starter tasks), measurement = weekly AI usage check + quality review at 4 weeks. Partial: generic training suggestion without diagnosis or measurement."},
-  ],
-  openCount:3,
-},
-
-5: {
-  color:"#2ECC71", pillBg:"#E8F5E9", pillFg:"#1B5E20", heroBg:"linear-gradient(135deg,#1B5E20,#2ECC71)",
-  label:"Level 5 — Champion", passScore:75, totalMarks:50,
-  mcqCount:2,
-  mcqPool:[
-    {t:"mcq",q:"As an AI Champion, what is your PRIMARY responsibility to the team?",o:["To use the most advanced AI tools before anyone else","To make yourself indispensable by being the only AI expert","To mentor others, share learnings, and help the team collectively raise their AI maturity","To report team members who use AI incorrectly"],a:2,m:4},
-    {t:"mcq",q:"Your team's AI governance policy should include (select the MOST complete answer):",o:["A list of banned websites","Approved tools, data classification rules, human review requirements, escalation process, and quarterly review cycle","Just a reminder to use common sense","A technical guide that only senior engineers understand"],a:1,m:4},
-    {t:"mcq",q:"What is the BEST way to sustain AI adoption in a team after the initial excitement fades?",o:["Mandate AI use for all tasks","Regularly share wins, update the prompt library, and tie AI use to team KPIs","Bring in a new AI tool every month","Leave it to individuals to self-motivate"],a:1,m:4},
-    {t:"mcq",q:"A team member's AI-assisted output contains a factual error that nearly reached a client. As a Champion, what do you do FIRST?",o:["Ignore it — everyone makes mistakes","Update the team's AI workflow to add a mandatory human review step at that point","Blame the AI tool","Stop the team from using AI"],a:1,m:4},
-    {t:"mcq",q:"Which of these BEST describes 'responsible AI use' in an enterprise context?",o:["Using AI only for personal tasks","Using AI with human oversight, data governance, transparency, and accountability","Using AI as fast as possible for maximum output","Keeping AI use secret from management"],a:1,m:4},
-    {t:"mcq",q:"What is the most effective format for sharing an AI win with senior leadership?",o:["A long technical explanation of how the AI works","A concise before/after comparison with business impact: time saved, cost reduced, quality improved","A screenshot of the AI conversation","A 30-minute presentation on AI history"],a:1,m:4},
-    {t:"mcq",q:"As an AI Champion, how do you handle a team member who misuses AI and shares confidential data externally?",o:["Ignore it — it was probably a mistake","Address it immediately: report the breach, support remediation, update governance, and use it as a learning moment for the whole team","Ask AI what to do","Publicly criticise the team member"],a:1,m:4},
-    {t:"mcq",q:"What is the MOST important quality of a good AI Champion?",o:["Knowing the most AI tools","Being the fastest at writing prompts","Combining technical AI knowledge with the ability to coach, communicate, and drive cultural change","Having the highest AI assessment score"],a:2,m:4},
-    {t:"mcq",q:"How should a Champion respond when the organisation's AI strategy conflicts with the team's practical needs?",o:["Ignore the strategy and do what works","Follow the strategy blindly even if it causes problems","Escalate the conflict with data: document the gap, propose a practical adjustment, and engage stakeholders","Ask AI to resolve the conflict"],a:2,m:4},
-    {t:"mcq",q:"What does 'AI maturity' at an organisational level mean?",o:["The organisation has the newest AI tools","The organisation systematically uses AI with governance, trained staff, measured outcomes, and a culture of continuous improvement","The organisation has an AI team","The CEO knows about AI"],a:1,m:4},
-    {t:"mcq",q:"When designing an AI Centre of Excellence (CoE) for your department, what is its PRIMARY purpose?",o:["To be the only team allowed to use AI","To centralise AI knowledge, develop standards, support adoption across teams, and track AI maturity progress","To purchase AI tools for the organisation","To monitor employees' AI usage"],a:1,m:4},
-    {t:"mcq",q:"What is the BEST way for a Champion to keep their own AI knowledge current?",o:["Read one article per year","Regularly experiment with new tools, follow AI developments, share learnings with the team, and update team practices accordingly","Only attend official training courses","Ask AI to summarise all AI news"],a:1,m:4},
-    {t:"mcq",q:"How should a Champion handle a situation where AI produces a result that is technically correct but ethically problematic?",o:["Use the result — technical correctness is all that matters","Reject the result, raise it with the team and governance leads, and use it to strengthen the AI usage guidelines","Ask AI to fix the ethics problem","Ignore it if the client hasn't noticed"],a:1,m:4},
-    {t:"mcq",q:"What is the MOST effective way to scale AI adoption from one team to the whole department?",o:["Mandate AI use for all staff immediately","Document the pilot results, create reusable playbooks, identify champions in each sub-team, and run structured rollout with support","Send an email announcing AI is now required","Ask the IT department to force AI tool installation"],a:1,m:4},
-  ],
-  openPool:[
-    {t:"open",q:"LEADERSHIP TASK: Design a 4-week AI Onboarding Programme for a new team member joining your team who has zero AI experience. Include: Week-by-week plan, tools introduced, hands-on tasks, checkpoints, and how you will know they have reached Level 2 by Week 4.",m:14,h:"Full marks: week-by-week plan with specific tools and tasks, buddy/mentor assigned, checkpoint quiz or task at week 2 and 4, defined Level 2 criteria (pass L2 assessment at 65%+, complete 1 real AI task). Strong answers are specific and practical."},
-    {t:"open",q:"INNOVATION TASK: Identify ONE new AI use case for the Application Management team that does not currently exist in your team's workflow. Describe: the problem it solves, the AI tool/approach, how you would pilot it, success metrics, and how you would scale it if the pilot succeeds.",m:16,h:"Full marks: specific, realistic use case (e.g. AI-powered alert correlation, AI-generated test data, AI knowledge base chatbot), clear pilot design (scope, timeline, participants), 2+ success metrics with baseline, documented scale plan. Deduct if no human oversight built in."},
-    {t:"open",q:"REFLECTION: As an AI Champion, what does being 'AI-ready' mean to you — for yourself, your team, and your organisation? And what is the one thing you will do in the next 30 days to make the team more AI-ready?",m:12,h:"Award marks for: personal definition beyond tool use (mindset, safety, ethics), team angle (shared learning, psychological safety), org angle (governance, ROI), 30-day action that is specific, measurable, and realistic. Penalise vague platitudes."},
-    {t:"open",q:"STRATEGY TASK: Your organisation wants to move from 'individual AI use' to 'team-level AI maturity'. Design a 90-day roadmap to achieve this. Include: current state assessment, key milestones, tools, training, governance, and how you will measure success at Day 90.",m:16,h:"Full marks: structured 3-phase plan (assess, build, scale), specific milestones (e.g. all team at L2 by day 30, prompt library built by day 60, ROI report by day 90), governance element, defined success metric. Deduct for vague platitudes without concrete actions."},
-    {t:"open",q:"MENTORING TASK: A Level 2 team member is struggling to apply AI to real work — they understand the theory but feel stuck. Design a 2-week personalised coaching plan for them. Include: daily/weekly activities, specific AI tasks tied to their role, how you will give feedback, and how you will know they are ready to attempt Level 3.",m:12,h:"Full marks: role-specific tasks (not generic), structured feedback loop (check-in, review output, iterate), clear L3-readiness criteria (complete a real AI task, score 65%+ on practice questions), encouraging tone. Partial: generic plan without role-specific tasks."},
-    {t:"open",q:"CULTURE TASK: Your organisation has a 'fear of AI' culture — many staff worry about job security and avoid using it. As a Champion, design a 3-month culture change plan. Include: how you will diagnose the fear, what initiatives you will run, how you will involve sceptics, and how you will measure cultural shift.",m:14,h:"Full marks: diagnosis (surveys, 1-1 conversations), initiatives (safe experimentation sessions, visible wins, no-blame policy for AI mistakes), sceptics involved as contributors not resistors, measurement (survey before/after, adoption rate, qualitative feedback). Partial: plan present but no measurement or sceptic involvement."},
-    {t:"open",q:"GOVERNANCE TASK: Design an AI Acceptable Use Policy (AUP) for your team covering: what AI can be used for, data handling rules, human review requirements, what is prohibited, and consequences for misuse. Write it in plain language suitable for all team members.",m:14,h:"Full marks: clear permitted uses (list 3+), data rules (no PII, credentials, confidential data in public tools), human review requirement stated explicitly, prohibited uses listed (autonomous decisions, unapproved tools), consequences fair and proportionate, language is accessible. Partial: missing prohibited uses or consequences."},
-    {t:"open",q:"STRATEGIC IMPACT TASK: You have achieved Level 5. Write a personal AI impact statement for your portfolio covering: your 3 most significant AI contributions, the measurable outcomes, what you learned about leading AI change, and how you will continue to grow as an AI Champion.",m:12,h:"Full marks: 3 specific contributions (not generic), each with a measurable outcome (time saved, quality improved, team members upskilled), genuine reflection on leading change (challenges faced, mistakes made), forward-looking growth plan. Partial: contributions present but no measurable outcomes or reflection."},
-    {t:"open",q:"CROSS-TEAM TASK: Your AI practices have produced strong results. Another team in the organisation asks you to help them start their AI journey. Describe how you would conduct an AI readiness assessment for them, what you would find out, and how you would present your recommendations.",m:12,h:"Full marks: readiness assessment covers current tools, skill levels, use case opportunities, governance gaps, and culture; findings presented as a prioritised report; recommendations include quick wins + 90-day roadmap; delivered as a workshop or structured document. Partial: assessment present but no findings structure or recommendations."},
-  ],
-  openCount:3,
-}
-
-}; // end LEVELS
-
-// ══ STATE ══════════════════════════════════════════════════════════════════
-let uName="", uRole="", uDept="", uCurLvl="";
-let curLevel=1, curQ=0, ans={}, levelResults={};
-
-// ── SHUFFLE HELPER ─────────────────────────────────────────────────────────
-function shuffle(arr){
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
-  return a;
-}
-
-// Build a shuffled question set for the current level
-function buildQuestions(lvl){
-  const L=LEVELS[lvl];
-  // Pick random MCQs from pool
-  const mcqs = shuffle(L.mcqPool).slice(0, L.mcqCount);
-  // Pick random open questions (if pool exists)
-  const opens = L.openPool && L.openPool.length
-    ? shuffle(L.openPool).slice(0, L.openCount||L.openPool.length)
-    : [];
-  // MCQs first, then open questions
-  return [...mcqs, ...opens];
-}
-
-// ══ HELPERS ════════════════════════════════════════════════════════════════
-function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));const el=document.getElementById(id);el.classList.add("active");window.scrollTo({top:0,behavior:"smooth"});}
-const LT=["A","B","C","D"];
-function lvlColor(l){return["","#5C6BC0","#0288D1","#00897B","#F4A83A","#2ECC71"][l];}
-
-function selectLevel(lvl){
-  uName=document.getElementById("uname").value.trim();
-  uRole=document.getElementById("urole").value.trim();
-  uDept=document.getElementById("udept").value.trim();
-  uCurLvl=document.getElementById("ucurlvl").value;
-  if(!uName||!uRole){alert("Please enter your name and role first.");return;}
-  curLevel=lvl; curQ=0; ans={};
-  const L=LEVELS[lvl];
-  // Build shuffled question set for this attempt
-  L.questions = buildQuestions(lvl);
-  // pill
-  const pill=document.getElementById("lvl-pill");
-  pill.style.background=L.pillBg; pill.style.color=L.pillFg;
-  pill.textContent=L.label;
-  show("s-quiz"); renderQ();
-}
-
-function renderQ(){
-  const L=LEVELS[curLevel];
-  const q=L.questions[curQ];
-  const total=L.questions.length;
-  const pct=Math.round(((curQ+1)/total)*100);
-  document.getElementById("pfill").style.width=pct+"%";
-  document.getElementById("pfill").style.background=L.color;
-  document.getElementById("qnum").textContent=(curQ+1)+" / "+total;
-
-  let h=`<span class="marks-tag">${q.m} mark${q.m>1?"s":""}</span>`;
-  if(q.t==="mcq"){
-    h+=`<div class="qtext">${q.q}</div>`;
-    q.o.forEach((o,i)=>{
-      const sel=ans[curQ]===i?" selected":"";
-      h+=`<div class="opt${sel}" onclick="pick(${i})"><span class="opt-lt">${LT[i]}</span>${o}</div>`;
-    });
-  } else {
-    h+=`<div class="qtext">${q.q.replace(/\n/g,"<br>")}</div>`;
-    h+=`<textarea class="oa" id="ota" placeholder="Write your detailed answer here…" oninput="saveOpen()">${ans[curQ]||""}</textarea>`;
-    if(q.h) h+=`<div class="hint"><b>Marking guide (for assessor):</b> ${q.h}</div>`;
+function parseCSVLine(line){
+  const result = [];
+  let cur = "", inQuote = false;
+  for(let i = 0; i < line.length; i++){
+    const ch = line[i];
+    if(ch === '"'){ inQuote = !inQuote; }
+    else if(ch === ',' && !inQuote){ result.push(cur.trim()); cur = ""; }
+    else { cur += ch; }
   }
-  document.getElementById("qcard").innerHTML=h;
-  document.getElementById("btn-prev").style.visibility=curQ===0?"hidden":"visible";
-  document.getElementById("btn-next").textContent=curQ===L.questions.length-1?"Submit & See Results ✓":"Next →";
+  result.push(cur.trim());
+  return result;
 }
 
-function pick(i){ans[curQ]=i;document.querySelectorAll(".opt").forEach((el,idx)=>el.classList.toggle("selected",idx===i));}
-function saveOpen(){const ta=document.getElementById("ota");if(ta)ans[curQ]=ta.value;}
-function prev(){if(curQ>0){saveOpen();curQ--;renderQ();}}
-function next(){
-  saveOpen();
-  const q=LEVELS[curLevel].questions[curQ];
-  if(q.t==="mcq"&&ans[curQ]===undefined){alert("Please select an answer.");return;}
-  if(q.t==="open"&&(!ans[curQ]||ans[curQ].trim().length<15)){if(!confirm("Answer seems short. Continue?"))return;}
-  if(curQ<LEVELS[curLevel].questions.length-1){curQ++;renderQ();}
-  else showResult();
+function parseCSV(text){
+  const lines = text.trim().split("\n");
+  if(lines.length < 2) return [];
+  return lines.slice(1).map(line => {
+    const cols = parseCSVLine(line);
+    const scorePct = parseInt((cols[6]||"0").replace(/[^0-9]/g,""));
+    return {
+      timestamp: (cols[0]||"").trim(),
+      name:      (cols[1]||"").trim(),
+      role:      (cols[2]||"").trim(),
+      dept:      (cols[3]||"").trim(),
+      selfLevel: (cols[4]||"").trim(),
+      level:     (cols[5]||"").trim(),
+      scorePct:  isNaN(scorePct) ? 0 : scorePct,
+      pass:      (cols[7]||"").trim().toUpperCase() === "PASS"
+    };
+  }).filter(r => r.name);
 }
 
-function calcScore(){
-  const L=LEVELS[curLevel];
-  let mcqScore=0, openAnswered=0, openTotal=0;
-  // Compute actual total marks from selected questions
-  const actualTotal=L.questions.reduce((s,q)=>s+q.m,0);
-  L.questions.forEach((q,i)=>{
-    if(q.t==="mcq"){if(ans[i]===q.a)mcqScore+=q.m;}
-    else{openTotal+=q.m;if(ans[i]&&ans[i].trim().length>20)openAnswered+=q.m*0.7;}
+async function loadData(){
+  document.getElementById("loading-state").style.display = "flex";
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("error-state").style.display = "none";
+
+  try {
+    let text;
+    try {
+      // Try direct first
+      const res = await fetch(CSV_URL + "&cachebust=" + Date.now());
+      if(!res.ok) throw new Error("direct failed");
+      text = await res.text();
+    } catch {
+      // Fallback to CORS proxy
+      const res2 = await fetch(PROXY_URL + "&cachebust=" + Date.now());
+      if(!res2.ok) throw new Error("Could not fetch data (HTTP " + res2.status + ")");
+      text = await res2.text();
+    }
+    allRows = parseCSV(text);
+
+    if(allRows.length === 0){
+      showError("No submission data found yet. Complete an assessment first, then refresh.");
+      return;
+    }
+
+    renderDashboard(allRows);
+    document.getElementById("last-updated").textContent = "Updated " + new Date().toLocaleTimeString();
+    document.getElementById("loading-state").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+
+  } catch(e){
+    showError("Failed to load data: " + e.message + "<br><br>Make sure your Google Sheet is published to the web (File → Share → Publish to web).");
+  }
+}
+
+function showError(msg){
+  document.getElementById("loading-state").style.display = "none";
+  document.getElementById("error-state").style.display = "block";
+  document.getElementById("error-msg").innerHTML = "⚠️ " + msg;
+}
+
+function renderDashboard(rows){
+  const total = rows.length;
+  const passed = rows.filter(r=>r.pass).length;
+  const failed = total - passed;
+  const avgScore = Math.round(rows.reduce((s,r)=>s+r.scorePct,0)/total);
+
+  // KPIs
+  const distinctUsers = [...new Set(rows.map(r=>r.name.trim()))].filter(Boolean);
+  document.getElementById("kpi-total").textContent = total;
+  document.getElementById("kpi-users").textContent = distinctUsers.length;
+  document.getElementById("kpi-users-sub").textContent = "unique participants";
+  document.getElementById("kpi-pass").textContent = Math.round((passed/total)*100)+"%";
+  document.getElementById("kpi-pass-count").textContent = passed + " passed";
+  document.getElementById("kpi-fail").textContent = Math.round((failed/total)*100)+"%";
+  document.getElementById("kpi-fail-count").textContent = failed + " need reassessment";
+  document.getElementById("kpi-avg").textContent = avgScore+"%";
+
+  // Pass/Fail chart
+  if(chartPF) chartPF.destroy();
+  chartPF = new Chart(document.getElementById("chart-passfail"), {
+    type: "doughnut",
+    data: {
+      labels: ["Pass","Fail"],
+      datasets:[{data:[passed,failed],backgroundColor:["#2ECC71","#EF4444"],borderWidth:0,hoverOffset:4}]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{color:"rgba(255,255,255,.6)",font:{family:"DM Mono",size:11},padding:16}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/total*100)}%)`}}}
+    }
   });
-  const raw=Math.round(mcqScore+openAnswered);
-  // Normalise to 100 for consistent pass/fail
-  const pct=Math.round((raw/actualTotal)*100);
-  const normTotal=Math.round((raw/actualTotal)*L.totalMarks);
-  return{total:normTotal,pct,mcqScore,pass:pct>=L.passScore};
+
+  // Levels chart
+  const levelCounts = {};
+  ["Level 1","Level 2","Level 3","Level 4","Level 5"].forEach(l=>levelCounts[l]=0);
+  rows.forEach(r=>{ if(levelCounts[r.level]!==undefined) levelCounts[r.level]++; });
+
+  if(chartLvl) chartLvl.destroy();
+  chartLvl = new Chart(document.getElementById("chart-levels"), {
+    type: "bar",
+    data: {
+      labels: Object.keys(levelCounts).map(l=>"L"+l.replace("Level ","")),
+      datasets:[{
+        data: Object.values(levelCounts),
+        backgroundColor: Object.keys(levelCounts).map(l=>LEVEL_COLORS[l]+"CC"),
+        borderColor: Object.keys(levelCounts).map(l=>LEVEL_COLORS[l]),
+        borderWidth:1, borderRadius:6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>Object.keys(levelCounts)[ctx[0].dataIndex]}}},
+      scales:{
+        x:{grid:{color:"rgba(255,255,255,.04)"},ticks:{color:"rgba(255,255,255,.5)",font:{family:"DM Mono",size:11}}},
+        y:{grid:{color:"rgba(255,255,255,.04)"},ticks:{color:"rgba(255,255,255,.5)",font:{family:"DM Mono",size:11},stepSize:1}}
+      }
+    }
+  });
+
+  // Level breakdown table
+  const totalDistinctUsers = [...new Set(rows.map(r=>r.name.trim()))].filter(Boolean).length;
+  let lh = "";
+  ["Level 1","Level 2","Level 3","Level 4","Level 5"].forEach(lvl => {
+    const lvlRows = rows.filter(r=>r.level===lvl);
+    if(!lvlRows.length) return;
+    const lvlPass = lvlRows.filter(r=>r.pass).length;
+    const lvlAvg = Math.round(lvlRows.reduce((s,r)=>s+r.scorePct,0)/lvlRows.length);
+    const passRate = Math.round((lvlPass/lvlRows.length)*100);
+    const col = LEVEL_COLORS[lvl];
+
+    // Distinct users who attempted this level
+    const usersAttempted = [...new Set(lvlRows.map(r=>r.name.trim()))].filter(Boolean).length;
+    // Distinct users who passed this level (at least once)
+    const usersPassed = [...new Set(lvlRows.filter(r=>r.pass).map(r=>r.name.trim()))].filter(Boolean).length;
+    const pctAttempted = totalDistinctUsers ? Math.round((usersAttempted/totalDistinctUsers)*100) : 0;
+    const pctPassed = usersAttempted ? Math.round((usersPassed/usersAttempted)*100) : 0;
+
+    lh += `<tr>
+      <td><span class="lvl-badge" style="background:${col}22;color:${col}">${lvl}</span></td>
+      <td>
+        <div style="margin-bottom:5px;font-size:11px;color:${col};font-family:var(--mono)">${passRate}%</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${passRate}%;background:${col}"></div></div>
+      </td>
+      <td class="level-stat" style="color:rgba(255,255,255,.7)">${lvlRows.length}</td>
+      <td class="level-stat" style="color:${col}">${lvlAvg}%</td>
+      <td class="level-stat" style="color:#2ECC71">${lvlPass}</td>
+      <td class="level-stat">
+        <span style="color:rgba(255,255,255,.8)">${pctAttempted}%</span>
+        <span style="color:var(--gray);font-size:10px;display:block">${usersAttempted}/${totalDistinctUsers}</span>
+      </td>
+      <td class="level-stat">
+        <span style="color:#2ECC71">${pctPassed}%</span>
+        <span style="color:var(--gray);font-size:10px;display:block">${usersPassed}/${usersAttempted}</span>
+      </td>
+    </tr>`;
+  });
+  document.getElementById("level-rows").innerHTML = lh || `<tr><td colspan="7"><div class="empty-state">No level data yet</div></td></tr>`;
+
+  // Table
+  renderTable(rows);
+  renderUserProgress(rows);
 }
 
-function getNextMsg(lvl,pass,pct){
-  if(!pass) return{title:"Not quite — reassessment recommended 📚",desc:`You scored ${pct}% against a pass mark of ${LEVELS[lvl].passScore}%. Review the Level ${lvl} learning material and retake within 2 weeks. Your team lead will schedule a 1:1 coaching session.`,bg:"#FEF2F2",border:"#DC2626",fg:"#991B1B"};
-  if(lvl===5) return{title:"🏆 You are an AI Champion!",desc:"Outstanding achievement. You have reached the highest level. You are now formally recognised as an AI Champion for the Application Management & Production Support team. Congratulations!",bg:"#ECFDF5",border:"#059669",fg:"#065F46"};
-  return{title:`Level ${lvl} Passed — Ready for Level ${lvl+1}! ✅`,desc:`Excellent! You have passed Level ${lvl} with ${pct}%. You are now eligible to take the Level ${lvl+1} assessment. Continue practising before your next attempt.`,bg:"#EFF6FF",border:"#2563EB",fg:"#1E40AF"};
-}
-
-function showResult(){
-  const L=LEVELS[curLevel];
-  const{total,pct,mcqScore,pass}=calcScore();
-  levelResults[curLevel]={total,pct,pass};
-
-  // Hero
-  const hero=document.getElementById("res-hero");
-  hero.style.background=L.heroBg;
-  document.getElementById("res-level-label").textContent=`${L.label.toUpperCase()} — ASSESSMENT COMPLETE`;
-  document.getElementById("r-score").textContent=Math.round((total/L.totalMarks)*100);
-  document.getElementById("r-pct").textContent=`${pct}% — ${pass?"PASSED ✓":"NOT YET PASSED"}`;
-  document.getElementById("r-name").textContent=uName+(uRole?" · "+uRole:"")+(uDept?" · "+uDept:"");
-  const badge=document.getElementById("r-badge");
-  badge.textContent=pass?`${L.label.split("—")[1].trim()} Certified ✓`:"Reassessment Needed";
-
-  // Next card
-  const nm=getNextMsg(curLevel,pass,pct);
-  const nc=document.getElementById("next-card");
-  nc.style.background=nm.bg; nc.style.borderColor=nm.border;
-  document.getElementById("next-title").style.color=nm.fg; document.getElementById("next-title").textContent=nm.title;
-  document.getElementById("next-desc").textContent=nm.desc;
-
-  // Button
-  const bnl=document.getElementById("btn-next-level");
-  if(curLevel===5||!pass){bnl.style.display="none";}
-  else{bnl.style.display="";bnl.textContent=`Take Level ${curLevel+1} Assessment →`;}
-
-  // Progress overview
-  const po=document.getElementById("prog-overview");
-  let poh="";
-  for(let i=1;i<=5;i++){
-    const r=levelResults[i];
-    const isCur=i===curLevel;
-    const col=lvlColor(i);
-    poh+=`<div class="po-box" style="${isCur?"border:2px solid "+col:""}">
-      <div class="po-lbl" style="color:${col}">L${i}</div>
-      <div class="po-val" style="color:${r?col:"#ccc"}">${r?r.pct+"%":"—"}</div>
-      <div class="po-status">${r?(r.pass?"✓ Pass":"✗ Redo"):(isCur?"Current":"—")}</div>
-    </div>`;
+function renderTable(rows){
+  if(!rows.length){
+    document.getElementById("table-body").innerHTML = `<tr><td colspan="8"><div class="empty-state">No results found</div></td></tr>`;
+    return;
   }
-  po.innerHTML=poh;
+  const sorted = [...rows].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  document.getElementById("table-body").innerHTML = sorted.map(r => {
+    const col = LEVEL_COLORS[r.level] || "#fff";
+    const scoreCol = r.scorePct >= 70 ? "#2ECC71" : r.scorePct >= 50 ? "#F4A83A" : "#EF4444";
+    return `<tr>
+      <td style="font-weight:500;color:#fff">${r.name||"—"}</td>
+      <td style="color:var(--gray)">${r.role||"—"}</td>
+      <td style="color:var(--gray)">${r.dept||"—"}</td>
+      <td style="color:var(--gray);font-family:var(--mono);font-size:11px">${r.selfLevel||"—"}</td>
+      <td><span style="color:${col};font-family:var(--mono);font-size:11px;font-weight:600">${r.level||"—"}</span></td>
+      <td><span class="score-pill" style="background:${scoreCol}18;color:${scoreCol}">${r.scorePct}%</span></td>
+      <td><span class="tag ${r.pass?"tag-pass":"tag-fail"}">${r.pass?"PASS":"FAIL"}</span></td>
+      <td style="color:var(--gray);font-size:11px;font-family:var(--mono);white-space:nowrap">${r.timestamp||"—"}</td>
+    </tr>`;
+  }).join("");
+}
 
-  // MCQ breakdown
-  const mcqs=L.questions.filter(q=>q.t==="mcq");
-  const opens=L.questions.filter(q=>q.t==="open");
-  const mcqTotal=mcqs.reduce((s,q)=>s+q.m,0);
-  const openTotal=opens.reduce((s,q)=>s+q.m,0);
+function renderUserProgress(rows){
+  const LEVELS = ["Level 1","Level 2","Level 3","Level 4","Level 5"];
+  const LC = {"Level 1":"var(--l1)","Level 2":"var(--l2)","Level 3":"var(--l3)","Level 4":"var(--l4)","Level 5":"var(--l5)"};
 
-  let bh=`<div class="card-lbl">Score breakdown</div>`;
-  const items=[
-    {lbl:"MCQ Section",score:mcqScore,max:mcqTotal,col:L.color},
-    {lbl:"Open Questions (est.)",score:Math.round(total-mcqScore),max:openTotal||1,col:"#78909C"},
-    {lbl:"Total Score",score:total,max:L.totalMarks,col:L.color},
+  // Build user map: name -> { role, dept, levels: { "Level 1": {score, pass}, ... } }
+  const userMap = {};
+  rows.forEach(r => {
+    const key = r.name.trim();
+    if(!key) return;
+    if(!userMap[key]) userMap[key] = { role: r.role, dept: r.dept, levels: {} };
+    // Keep best score per level per user
+    if(!userMap[key].levels[r.level] || r.scorePct > userMap[key].levels[r.level].score){
+      userMap[key].levels[r.level] = { score: r.scorePct, pass: r.pass };
+    }
+  });
+
+  const html = Object.entries(userMap).map(([name, u]) => {
+    // Find highest level passed
+    let highestPassed = null;
+    LEVELS.forEach(l => { if(u.levels[l] && u.levels[l].pass) highestPassed = l; });
+    const hcol = highestPassed ? LC[highestPassed] : "var(--gray)";
+
+    const levelCells = LEVELS.map(l => {
+      const d = u.levels[l];
+      if(!d) return `<td><span class="not-taken">—</span></td>`;
+      const scoreCol = d.score >= 70 ? "#2ECC71" : d.score >= 50 ? "#F4A83A" : "#EF4444";
+      const tagBg = d.pass ? "rgba(46,204,113,.15)" : "rgba(239,68,68,.15)";
+      const tagCol = d.pass ? "#2ECC71" : "#EF4444";
+      return `<td>
+        <div class="lvl-score">
+          <span class="lvl-score-val" style="color:${scoreCol}">${d.score}%</span>
+          <span class="lvl-score-tag" style="background:${tagBg};color:${tagCol}">${d.pass?"PASS":"FAIL"}</span>
+        </div>
+      </td>`;
+    }).join("");
+
+    return `<tr>
+      <td style="font-weight:600;color:#fff;white-space:nowrap">${name}</td>
+      <td style="color:var(--gray);font-size:11px">${u.role||"—"}</td>
+      <td style="color:var(--gray);font-size:11px">${u.dept||"—"}</td>
+      ${levelCells}
+      <td><span class="highest-badge" style="background:${hcol}22;color:${hcol}">${highestPassed||"None"}</span></td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("user-progress-body").innerHTML = html || `<tr><td colspan="9"><div class="empty-state">No data</div></td></tr>`;
+}
+
+function exportUserProgress(){
+  const LEVELS = ["Level 1","Level 2","Level 3","Level 4","Level 5"];
+  const userMap = {};
+  allRows.forEach(r => {
+    const key = r.name.trim();
+    if(!key) return;
+    if(!userMap[key]) userMap[key] = { role: r.role, dept: r.dept, levels: {} };
+    if(!userMap[key].levels[r.level] || r.scorePct > userMap[key].levels[r.level].score){
+      userMap[key].levels[r.level] = { score: r.scorePct, pass: r.pass };
+    }
+  });
+
+  // Build worksheet data
+  const headers = ["Name","Role","Department","L1 Unaware","L1 Result","L2 Aware","L2 Result","L3 Explorer","L3 Result","L4 Practitioner","L4 Result","L5 Champion","L5 Result","Highest Level Passed"];
+  const wsData = [headers];
+
+  Object.entries(userMap).forEach(([name, u]) => {
+    let highestPassed = null;
+    LEVELS.forEach(l => { if(u.levels[l] && u.levels[l].pass) highestPassed = l; });
+    const row = [name, u.role||"", u.dept||""];
+    LEVELS.forEach(l => {
+      const d = u.levels[l];
+      row.push(d ? d.score : "");
+      row.push(d ? (d.pass ? "PASS" : "FAIL") : "");
+    });
+    row.push(highestPassed || "None");
+    wsData.push(row);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths
+  ws["!cols"] = [
+    {wch:25},{wch:20},{wch:22},
+    {wch:12},{wch:10},{wch:12},{wch:10},
+    {wch:12},{wch:10},{wch:16},{wch:10},
+    {wch:14},{wch:10},{wch:20}
   ];
-  items.filter(it=>it.max>0).forEach(({lbl,score,max,col})=>{
-    const p=Math.min(100,Math.round((score/max)*100));
-    bh+=`<div class="bd-item"><span class="bd-lbl">${lbl}</span><div class="bd-track"><div class="bd-bar" style="width:${p}%;background:${col}"></div></div><span class="bd-score" style="color:${col}">${score}/${max}</span></div>`;
-  });
-  document.getElementById("breakdown-card").innerHTML=bh;
 
-  // MCQ review
-  if(mcqs.length){
-    let mh=`<div class="card-lbl">MCQ review — see your correct/incorrect answers</div>`;
-    mcqs.forEach((q,idx)=>{
-      const gi=L.questions.indexOf(q);
-      const correct=ans[gi]===q.a;
-      const userAns=ans[gi]!==undefined?q.o[ans[gi]]:"Not answered";
-      mh+=`<div class="ri"><div class="ri-q">Q${idx+1}. ${q.q}</div>
-        <div class="ri-row"><span class="${correct?"tag-ok":"tag-no"}">${correct?"✓ Correct":"✗ Wrong"}</span><span style="font-size:12px;color:var(--gray)">You answered: <b>${userAns}</b></span></div>
-        ${!correct?`<div class="ri-correct" style="color:var(--l3)">Correct answer: ${q.o[q.a]}</div>`:""}</div>`;
-    });
-    document.getElementById("mcq-review-card").innerHTML=mh;
-  } else {document.getElementById("mcq-review-card").style.display="none";}
-
-  // Open answer summary
-  if(opens.length){
-    let oh=`<div class="card-lbl">Your written answers (for assessor review)</div>`;
-    opens.forEach((q,idx)=>{
-      const gi=L.questions.indexOf(q);
-      const response=(ans[gi]||"Not answered").trim();
-      const preview=response.length>250?response.substring(0,250)+"…":response;
-      oh+=`<div class="ri"><div class="ri-q" style="font-size:12px;margin-bottom:5px">${q.q.split("\n")[0]} <span style="color:var(--gray);font-weight:400">(${q.m} marks)</span></div>
-        <div style="font-size:12px;color:var(--gray);line-height:1.65;background:var(--lgray);border-radius:8px;padding:9px 12px;font-style:italic">${preview||"<span style='color:#ccc'>No answer provided</span>"}</div>
-        <div style="font-size:10px;color:var(--gray);margin-top:4px;font-family:var(--mono)">Marking guide: ${q.h}</div></div>`;
-    });
-    document.getElementById("open-review-card").innerHTML=oh;
-  } else {document.getElementById("open-review-card").style.display="none";}
-
-  show("s-result");
+  XLSX.utils.book_append_sheet(wb, ws, "User Progress");
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `AI_Maturity_User_Progress_${date}.xlsx`);
 }
 
-function nextLevel(){selectLevel(curLevel+1);}
-function goSelect(){show("s-select");}
+function filterTable(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const filtered = allRows.filter(r =>
+    (r.name||"").toLowerCase().includes(q) ||
+    (r.role||"").toLowerCase().includes(q) ||
+    (r.dept||"").toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+}
 
-// set date
-document.addEventListener("DOMContentLoaded",()=>{
-  const d=new Date();
-  // optionally set today
-});
+// Init
+loadData();
+// Auto-refresh every 2 minutes
+setInterval(loadData, 120000);
 </script>
 </body>
 </html>
