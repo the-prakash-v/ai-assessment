@@ -6,7 +6,8 @@
 <title>AI Awareness Platform -- App Mgmt & Production Support</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0A1628;--mint:#02C39A;--mint2:#01A884;--lgray:#F4F6F8;--border:#DDE3EA;--gray:#546E7A;--l1:#5C6BC0;--l2:#0288D1;--l3:#00897B;--l4:#F4A83A;--l5:#2ECC71;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--sidebar:240px}
+:root{--ink:#0A1628;--mint:#02C39A;--mint2:#01A884;--lgray:#F4F6F8;--border:#DDE3EA;--gray:#546E7A;--l1:#5C6BC0;--l2:#0288D1;--l3:#00897B;--l4:#F4A83A;--l5:#2ECC71;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;--sidebar:52px}
+@media(min-width:560px){:root{--sidebar:220px}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:#EEF2F7;color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
 .topnav{background:var(--ink);display:flex;flex-wrap:wrap;align-items:center;padding:0 1rem;position:sticky;top:0;z-index:400;flex-shrink:0;min-height:48px}
@@ -30,18 +31,29 @@ body{font-family:var(--font);background:#EEF2F7;color:var(--ink);min-height:100v
   .tn-brand{margin-right:1.5rem}
 }
 .app-body{display:flex;flex:1;overflow:hidden}
-.sidebar{width:var(--sidebar);background:#fff;border-right:1px solid var(--border);padding:1.25rem 0;flex-shrink:0;overflow-y:auto;position:sticky;top:88px;height:calc(100vh - 88px)}
-@media(min-width:560px){.sidebar{top:52px;height:calc(100vh - 52px)}}
+.sidebar{width:var(--sidebar);background:#fff;border-right:1px solid var(--border);padding:.75rem 0;flex-shrink:0;overflow-y:auto;position:sticky;top:88px;height:calc(100vh - 88px);transition:width .2s}
+@media(min-width:560px){.sidebar{top:52px;height:calc(100vh - 52px);padding:1.25rem 0}}
 .sb-section{padding:0 0 1rem}
-.sb-head{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--gray);text-transform:uppercase;padding:0 1rem .5rem}
-.sb-item{display:flex;align-items:center;gap:10px;padding:8px 1rem;cursor:pointer;font-size:12px;font-weight:500;color:var(--gray);transition:all .12s;border-left:2px solid transparent}
+.sb-head{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--gray);text-transform:uppercase;padding:0 1rem .5rem;white-space:nowrap;overflow:hidden}
+/* mobile: icon-only sidebar */
+.sb-item{display:flex;align-items:center;justify-content:center;padding:10px 0;cursor:pointer;font-size:12px;font-weight:500;color:var(--gray);transition:all .12s;border-left:2px solid transparent;position:relative}
 .sb-item:hover{background:var(--lgray);color:var(--ink)}
 .sb-item.active{background:#F0F9FF;color:var(--l2);border-left-color:var(--l2)}
 .sb-item.done{color:var(--l3)}
-.sb-item .sb-icon{font-size:15px;width:18px;text-align:center}
-.sb-item .sb-prog{margin-left:auto;font-size:10px;font-family:var(--mono);background:var(--lgray);padding:2px 6px;border-radius:10px}
-.sb-item.done .sb-prog{background:#D1FAE5;color:#065F46}
-.sb-divider{height:1px;background:var(--border);margin:.5rem 1rem}
+.sb-item .sb-icon{font-size:18px;width:20px;text-align:center;flex-shrink:0}
+.sb-item .sb-label{display:none}
+.sb-item .sb-prog{display:none}
+.sb-divider{height:1px;background:var(--border);margin:.5rem 6px}
+/* desktop: full sidebar */
+@media(min-width:560px){
+  .sb-head{display:block}
+  .sb-item{justify-content:flex-start;padding:8px 1rem;gap:10px}
+  .sb-item .sb-icon{font-size:15px}
+  .sb-item .sb-label{display:block;white-space:nowrap;overflow:hidden;flex:1;font-size:12px}
+  .sb-item .sb-prog{display:block;margin-left:auto;font-size:10px;font-family:var(--mono);background:var(--lgray);padding:2px 6px;border-radius:10px;white-space:nowrap}
+  .sb-item.done .sb-prog{background:#D1FAE5;color:#065F46}
+  .sb-divider{margin:.5rem 1rem}
+}
 .main{flex:1;overflow-y:auto;padding:2rem 1.5rem 4rem}
 .screen{display:none}.screen.active{display:block;animation:fadeUp .25s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -78,13 +90,18 @@ body{font-family:var(--font);background:#EEF2F7;color:var(--ink);min-height:100v
 .lp-badge.train{background:#E0F2F1;color:#00695C}
 .lp-badge.assess{background:#EDE9FE;color:var(--l1)}
 /* TRAINING */
-.train-hdr{margin-bottom:1.5rem}
-.train-hdr h2{font-size:22px;font-weight:600;margin-bottom:4px}
-.module-nav{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
-.mod-tab{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--gray);transition:all .15s}
+.train-hdr{margin-bottom:1rem}
+.train-hdr h2{font-size:20px;font-weight:600;margin-bottom:4px}
+@media(min-width:560px){.train-hdr h2{font-size:22px}}
+.module-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1.25rem}
+.mod-tab{padding:8px 4px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--gray);transition:all .15s;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mod-tab:hover{border-color:var(--mint);color:var(--ink)}
 .mod-tab.active{border-color:var(--mint);background:#F0FDF9;color:var(--l3)}
 .mod-tab.done{border-color:var(--l3);background:#E0F2F1;color:var(--l3)}
+@media(min-width:560px){
+  .module-nav{display:flex;gap:8px}
+  .mod-tab{padding:7px 16px;font-size:12px;text-align:left}
+}
 /* READING */
 .reading-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1.1rem}
 .rc-tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem}
@@ -251,7 +268,7 @@ textarea.oa:focus{border-color:var(--mint);background:#fff}
 .ri-correct{font-size:11px;color:var(--l3);margin-top:3px}
 .sc-card{background:linear-gradient(135deg,var(--ink) 0%,#1a3048 100%);border-radius:14px;padding:1.5rem;margin-bottom:1.1rem;color:#fff;text-align:center}
 .sc-step{font-size:12px;color:#B0BEC5;padding:4px 0;line-height:1.5}
-@media(max-width:600px){.stats-row,.lvl-grid-5,.level-grid-2{grid-template-columns:1fr 1fr}.entry-row,.concept-grid,.fgrid{grid-template-columns:1fr}.main{padding:1rem .75rem 3rem}}
+@media(max-width:559px){.stats-row,.lvl-grid-5,.level-grid-2{grid-template-columns:1fr 1fr}.entry-row,.concept-grid,.fgrid{grid-template-columns:1fr}.main{padding:.875rem .75rem 3rem}.sb-head{display:none}}
 @media print{.topnav,.sidebar,.module-nav{display:none!important}.main{padding:0}}
 </style>
 </head>
@@ -274,17 +291,17 @@ textarea.oa:focus{border-color:var(--mint);background:#fff}
 <aside class="sidebar" id="sidebar" style="display:none">
   <div class="sb-section">
     <div class="sb-head">Levels</div>
-    <div class="sb-item" id="sb-1" onclick="setLvl(1)"><span class="sb-icon">🌱</span>L1 Unaware<span class="sb-prog" id="sbp-1">0%</span></div>
-    <div class="sb-item" id="sb-2" onclick="setLvl(2)"><span class="sb-icon">👀</span>L2 Aware<span class="sb-prog" id="sbp-2">0%</span></div>
-    <div class="sb-item" id="sb-3" onclick="setLvl(3)"><span class="sb-icon">🔬</span>L3 Explorer<span class="sb-prog" id="sbp-3">0%</span></div>
-    <div class="sb-item" id="sb-4" onclick="setLvl(4)"><span class="sb-icon">⚡</span>L4 Practitioner<span class="sb-prog" id="sbp-4">0%</span></div>
-    <div class="sb-item" id="sb-5" onclick="setLvl(5)"><span class="sb-icon">🏆</span>L5 Champion<span class="sb-prog" id="sbp-5">0%</span></div>
+    <div class="sb-item" id="sb-1" onclick="setLvl(1)" title="Level 1 — Unaware"><span class="sb-icon">🌱</span><span class="sb-label">L1 Unaware</span><span class="sb-prog" id="sbp-1">0%</span></div>
+    <div class="sb-item" id="sb-2" onclick="setLvl(2)" title="Level 2 — Aware"><span class="sb-icon">👀</span><span class="sb-label">L2 Aware</span><span class="sb-prog" id="sbp-2">0%</span></div>
+    <div class="sb-item" id="sb-3" onclick="setLvl(3)" title="Level 3 — Explorer"><span class="sb-icon">🔬</span><span class="sb-label">L3 Explorer</span><span class="sb-prog" id="sbp-3">0%</span></div>
+    <div class="sb-item" id="sb-4" onclick="setLvl(4)" title="Level 4 — Practitioner"><span class="sb-icon">⚡</span><span class="sb-label">L4 Practitioner</span><span class="sb-prog" id="sbp-4">0%</span></div>
+    <div class="sb-item" id="sb-5" onclick="setLvl(5)" title="Level 5 — Champion"><span class="sb-icon">🏆</span><span class="sb-label">L5 Champion</span><span class="sb-prog" id="sbp-5">0%</span></div>
   </div>
   <div class="sb-divider"></div>
   <div class="sb-section">
     <div class="sb-head">Quick Links</div>
-    <div class="sb-item" onclick="go('assessment')"><span class="sb-icon">📋</span>Assessment</div>
-    <div class="sb-item" onclick="go('home')"><span class="sb-icon">🏠</span>Dashboard</div>
+    <div class="sb-item" onclick="go('assessment')"><span class="sb-icon">📋</span><span class="sb-label">Assessment</span></div>
+    <div class="sb-item" onclick="go('home')"><span class="sb-icon">🏠</span><span class="sb-label">Dashboard</span></div>
   </div>
 </aside>
 <main class="main" id="main">
@@ -903,7 +920,7 @@ function renderTraining(){
   inner.innerHTML=`<div class="train-hdr"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-size:22px">${T.emoji}</span><div><h2>${T.title}</h2><p style="margin:0;font-size:13px;color:var(--gray)">${T.subtitle}</p></div></div></div><div class="module-nav" id="mod-nav"></div><div id="mod-content"></div>`;
   const nav=document.getElementById('mod-nav');
   const p=S.prog[l];
-  const tabs=[{id:'read',lbl:'📖 Reading',done:p.r>=1},{id:'check',lbl:'✅ Knowledge Check',done:p.k>=3},{id:'lab',lbl:'🧪 Lab',done:p.lb>=3},{id:'workbook',lbl:'📝 Workbook',done:p.wb>=1}];
+  const tabs=[{id:'read',lbl:'📖 Reading',done:p.r>=1},{id:'check',lbl:'✅ Check',done:p.k>=3},{id:'lab',lbl:'🧪 Lab',done:p.lb>=3},{id:'workbook',lbl:'📝 Workbook',done:p.wb>=1}];
   tabs.forEach(t=>{nav.innerHTML+=`<div class="mod-tab ${t.id===S.mod?'active':''} ${t.done?'done':''}" onclick="setMod('${t.id}')">${t.done?'✓ ':''} ${t.lbl}</div>`;});
   const mc=document.getElementById('mod-content');
   if(S.mod==='read')renderRead(l,T,mc);
